@@ -55,7 +55,7 @@ function App() {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(false)
 
   // Google Drive自動保存フック
-  const { lastSaveTime, isSaving, saveStatus, manualSave } = useAutoSaveToGoogleDrive({
+  const { isSaving, saveStatus, manualSave } = useAutoSaveToGoogleDrive({
     schedules,
     persons,
     leaveRequests,
