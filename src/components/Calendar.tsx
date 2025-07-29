@@ -129,6 +129,12 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 1, locale: ja })
     const today = getTodaySafe() // キャッシュされた今日の日付を使用
 
+    // デバッグ情報
+    console.log('Calendar Debug Info:')
+    console.log('monthStart:', format(monthStart, 'yyyy-MM-dd EEEE', { locale: ja }))
+    console.log('startDate (week start):', format(startDate, 'yyyy-MM-dd EEEE', { locale: ja }))
+    console.log('startDate.getDay():', startDate.getDay()) // 0=日曜, 1=月曜
+
     const days = []
     let day = startDate
     let dayCount = 0 // 無限ループ防止
