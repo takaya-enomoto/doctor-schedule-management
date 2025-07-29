@@ -1541,6 +1541,10 @@ select:focus {
   font-family: 'Cinzel', serif;
   color: #2d1b0e;
   overflow: hidden;
+  /* 固定レイアウトでレスポンシブ影響を防ぐ */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   position: relative;
 }
 
@@ -1614,6 +1618,12 @@ select:focus {
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
   margin-bottom: 0.3rem;
+  /* 固定幅でグリッド配置を確実にする */
+  width: 100%;
+  box-sizing: border-box;
+  /* CSS Grid のアイテム順序を強制的に左から右へ */
+  grid-auto-flow: row;
+  direction: ltr;
 }
 
 .weekday {
@@ -1628,8 +1638,15 @@ select:focus {
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, minmax(60px, auto));
   gap: 1px;
   background: #bdc3c7;
+  /* 固定幅でグリッド配置を確実にする */
+  width: 100%;
+  box-sizing: border-box;
+  /* CSS Grid のアイテム順序を強制的に左から右、上から下へ */
+  grid-auto-flow: row;
+  direction: ltr;
 }
 
 .calendar-day {

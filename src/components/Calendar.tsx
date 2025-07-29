@@ -3,8 +3,6 @@ import {
   format, 
   startOfMonth, 
   endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
   addDays, 
   isSameMonth, 
   isSameDay,
@@ -122,18 +120,33 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
     )
   }
 
+  // 独自の月曜日開始週計算関数
+  const getMonStartOfWeek = (date: Date): Date => {
+    const day = date.getDay() // 0=日曜, 1=月曜, 2=火曜...
+    const diff = day === 0 ? -6 : 1 - day // 月曜日までの日数差
+    const result = new Date(date)
+    result.setDate(date.getDate() + diff)
+    result.setHours(0, 0, 0, 0)
+    return result
+  }
+
+  const getMonEndOfWeek = (date: Date): Date => {
+    const startOfWeek = getMonStartOfWeek(date)
+    const result = new Date(startOfWeek)
+    result.setDate(startOfWeek.getDate() + 6) // 6日後が日曜日
+    result.setHours(23, 59, 59, 999)
+    return result
+  }
+
   const renderCalendarDays = () => {
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(currentDate)
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1, locale: ja })
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1, locale: ja })
-    const today = getTodaySafe() // キャッシュされた今日の日付を使用
-
-    // デバッグ情報
-    console.log('Calendar Debug Info:')
-    console.log('monthStart:', format(monthStart, 'yyyy-MM-dd EEEE', { locale: ja }))
-    console.log('startDate (week start):', format(startDate, 'yyyy-MM-dd EEEE', { locale: ja }))
-    console.log('startDate.getDay():', startDate.getDay()) // 0=日曜, 1=月曜
+    
+    // 独自の月曜日開始計算を使用
+    const startDate = getMonStartOfWeek(monthStart)
+    const endDate = getMonEndOfWeek(monthEnd)
+    const today = getTodaySafe()
+    
 
     const days = []
     let day = startDate
@@ -153,12 +166,23 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
       const hasOnCall = onCallsForDay.length > 0
       const hasNurseOnCall = nurseOnCallsForDay.length > 0
 
+      // CSS Gridの位置を明示的に計算（1ベース）
+      const gridColumn = (dayCount % 7) + 1
+      const gridRow = Math.floor(dayCount / 7) + 1
+      
       days.push(
         <div
           key={getDateKey(day)} // 安全なキー生成関数を使用
           className={`calendar-day ${
             !isCurrentMonth ? 'other-month' : ''
           } ${isToday ? 'today' : ''} ${workDayInfo ? 'work-day' : ''} ${hasPersons || hasOneTimeWork ? 'has-persons' : ''} ${hasOnCall ? 'has-oncall' : ''} ${hasNurseOnCall ? 'has-nurse-oncall' : ''}`}
+          data-date={format(day, 'yyyy-MM-dd')}
+          data-weekday={format(day, 'EEEE', { locale: ja })}
+          data-position={dayCount}
+          style={{
+            gridColumn: gridColumn,
+            gridRow: gridRow
+          }}
         >
           <div className="day-number">{format(day, 'd')}</div>
           
@@ -283,14 +307,16 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
       console.warn('Calendar rendering hit maximum day limit - potential infinite loop prevented')
     }
 
+
     return days
   }
 
 
   const weekDays = ['月', '火', '水', '木', '金', '土', '日']
+  
 
   return (
-    <div className="calendar">
+    <div className="calendar" key={`calendar-${renderKey}`}>
       <div className="calendar-header">
         <button 
           onClick={() => {
@@ -325,7 +351,7 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
             </div>
           ))}
         </div>
-        <div className="calendar-days">
+        <div className="calendar-days" key={`calendar-days-${renderKey}`}>
           {renderCalendarDays()}
         </div>
       </div>
