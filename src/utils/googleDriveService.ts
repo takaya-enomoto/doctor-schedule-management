@@ -156,13 +156,12 @@ class GoogleDriveService {
   getCurrentUser(): GoogleAPIState['user'] | null {
     if (!this.isSignedIn()) return null
 
-    const user = this.authInstance.currentUser.get()
-    const profile = user.getBasicProfile()
-    
+    // Google Identity Services では詳細なユーザー情報は別途取得が必要
+    // 現在は基本情報のみ返す
     return {
-      name: profile.getName(),
-      email: profile.getEmail(),
-      imageUrl: profile.getImageUrl()
+      name: 'ユーザー',
+      email: '',
+      imageUrl: ''
     }
   }
 
@@ -220,7 +219,7 @@ class GoogleDriveService {
       const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.authInstance.currentUser.get().getAuthResponse().access_token}`
+          'Authorization': `Bearer ${this.authInstance.accessToken}`
         },
         body: form
       })
