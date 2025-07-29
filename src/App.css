@@ -272,12 +272,13 @@ html, body {
   
   /* 日付番号 - コンパクト化 */
   .day-number {
-    font-weight: bold !important;
+    font-weight: 900 !important; /* より太く */
     margin-bottom: 0.05rem !important;
-    font-size: 0.75rem !important;
+    font-size: 0.8rem !important; /* 少し大きく */
     line-height: 1 !important;
-    color: black !important;
+    color: #2c3e50 !important; /* より濃い色 */
     flex-shrink: 0 !important;
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3) !important; /* 影でくっきり */
   }
   
   /* 人員情報の最適化 - 高さを節約 */
@@ -320,9 +321,10 @@ html, body {
   }
   
   .person-name {
-    font-weight: bold !important;
-    color: #2c3e50 !important;
-    font-size: 0.55rem !important;
+    font-weight: 900 !important; /* より太く */
+    color: #1a252f !important; /* より濃く */
+    font-size: 0.6rem !important; /* 少し大きく */
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.4) !important; /* 影でくっきり */
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -399,9 +401,10 @@ html, body {
   }
   
   .onetime-name {
-    font-weight: bold !important;
-    color: #e67e22 !important;
-    font-size: 0.55rem !important;
+    font-weight: 900 !important; /* より太く */
+    color: #d35400 !important; /* より濃く */
+    font-size: 0.6rem !important; /* 少し大きく */
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.4) !important; /* 影でくっきり */
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -460,12 +463,12 @@ html, body {
   }
   
   .oncall-label {
-    font-weight: bold !important;
-    color: #6c3483 !important;
-    font-size: 0.5rem !important;
+    font-weight: 900 !important; /* より太く */
+    color: #512e5f !important; /* より濃く */
+    font-size: 0.55rem !important; /* 少し大きく */
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.5) !important; /* 影でくっきり */
     display: inline !important;
     margin-left: 0.3rem !important;
-    text-shadow: 0 1px 1px rgba(255,255,255,0.5) !important;
   }
   
   .oncall-name {
@@ -1700,10 +1703,12 @@ select:focus {
 }
 
 .day-number {
-  font-weight: bold;
+  font-weight: 900; /* より太く */
   margin-bottom: 0.15rem;
-  font-size: 0.9rem;
+  font-size: 1rem; /* 少し大きく */
   line-height: 1.1;
+  color: #2c3e50; /* より濃い色 */
+  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.2); /* 影でくっきり */
 }
 
 .work-info {
@@ -1996,15 +2001,17 @@ select:focus {
 }
 
 .person-work-item .person-name {
-  font-weight: bold;
-  color: #2c3e50;
-  font-size: 0.6rem;
+  font-weight: 900; /* より太く */
+  color: #1a252f; /* より濃く */
+  font-size: 0.65rem; /* 少し大きく */
+  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* 影でくっきり */
   margin-bottom: 0.1rem;
 }
 
 .person-work-item .person-time {
-  color: #555;
-  font-size: 0.5rem;
+  color: #2c3e50; /* より濃く */
+  font-size: 0.55rem; /* 少し大きく */
+  font-weight: 600; /* 少し太く */
 }
 
 
@@ -2093,9 +2100,10 @@ select:focus {
 
 
 .oncall-name {
-  font-weight: bold;
-  color: #27ae60;
-  font-size: 0.6rem;
+  font-weight: 900; /* より太く */
+  color: #1e8449; /* より濃く */
+  font-size: 0.65rem; /* 少し大きく */
+  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* 影でくっきり */
   margin-bottom: 0.1rem;
 }
 
@@ -3103,15 +3111,17 @@ select:focus {
 }
 
 .calendar-day .onetime-name {
-  font-weight: bold;
-  color: #8e44ad;
-  font-size: 0.6rem;
+  font-weight: 900; /* より太く */
+  color: #6c3483; /* より濃く */
+  font-size: 0.65rem; /* 少し大きく */
+  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* 影でくっきり */
   margin-bottom: 0.1rem;
 }
 
 .calendar-day .onetime-time {
-  color: #555;
-  font-size: 0.5rem;
+  color: #2c3e50; /* より濃く */
+  font-size: 0.55rem; /* 少し大きく */
+  font-weight: 600; /* 少し太く */
   margin-bottom: 0.1rem;
 }
 
