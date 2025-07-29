@@ -1,0 +1,42 @@
+// Google Drive API 設定
+export const GOOGLE_DRIVE_CONFIG = {
+  // Google API Console で取得するクライアントID
+  // 実際の使用時は環境変数から読み込むことを推奨
+  CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+  API_KEY: import.meta.env.VITE_GOOGLE_API_KEY || '',
+  
+  // OAuth 2.0 スコープ
+  SCOPES: [
+    'https://www.googleapis.com/auth/drive.file', // ファイルの作成・読み書き
+  ],
+  
+  // Discovery documents
+  DISCOVERY_DOCS: [
+    'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+  ],
+  
+  // アプリケーション用フォルダ名
+  APP_FOLDER_NAME: '医師出勤管理_データ',
+  
+  // バックアップファイル名のプレフィックス
+  BACKUP_FILE_PREFIX: '医師出勤管理_バックアップ_'
+}
+
+// Google API が読み込まれているかチェック
+export const isGoogleAPILoaded = (): boolean => {
+  return typeof window !== 'undefined' && 
+         typeof (window as any).gapi !== 'undefined' &&
+         typeof (window as any).google !== 'undefined'
+}
+
+// Google API の初期化状態
+export interface GoogleAPIState {
+  isLoaded: boolean
+  isSignedIn: boolean
+  isInitialized: boolean
+  user?: {
+    name: string
+    email: string
+    imageUrl: string
+  }
+}
