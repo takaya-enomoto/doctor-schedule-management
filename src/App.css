@@ -1379,7 +1379,7 @@ header h1 {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 2fr 1fr;
   gap: 2rem;
   align-items: start;
   min-height: calc(100vh - 200px);
