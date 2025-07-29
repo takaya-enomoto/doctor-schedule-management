@@ -957,12 +957,12 @@ header {
     linear-gradient(135deg, #8b4513 0%, #a0522d 25%, #cd853f 50%, #a0522d 75%, #8b4513 100%),
     url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='0.05'%3E%3Cpath d='M20 20c0 5.5-4.5 10-10 10s-10-4.5-10-10 4.5-10 10-10 10 4.5 10 10zm10 0c0 5.5-4.5 10-10 10s-10-4.5-10-10 4.5-10 10-10 10 4.5 10 10z'/%3E%3C/g%3E%3C/svg%3E");
   color: #f4e4c1;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  border-radius: 12px;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
   border: 3px solid #daa520;
   box-shadow: 
-    0 8px 16px rgba(0,0,0,0.3),
+    0 4px 8px rgba(0,0,0,0.3),
     inset 0 1px 0 rgba(255,255,255,0.1);
   font-family: 'MedievalSharp', cursive;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
@@ -979,14 +979,15 @@ header {
 /* ゼルダ風 タイトル */
 header h1 {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
   color: #daa520;
   text-shadow: 
     2px 2px 0 #8b4513,
     4px 4px 8px rgba(0,0,0,0.8);
   font-family: 'MedievalSharp', cursive;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
+  line-height: 1.2;
 }
 
 .header-buttons {
@@ -1565,7 +1566,7 @@ select:focus {
 .calendar-header {
   background: #34495e;
   color: white;
-  padding: 1rem;
+  padding: 0.6rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1574,7 +1575,8 @@ select:focus {
 
 .calendar-header h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
+  line-height: 1.2;
 }
 
 .nav-button {
@@ -1593,20 +1595,21 @@ select:focus {
 }
 
 .calendar-grid {
-  padding: 1rem;
+  padding: 0.6rem;
 }
 
 .weekday-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 1px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.6rem;
 }
 
 .weekday {
   background: #ecf0f1;
-  padding: 0.5rem;
+  padding: 0.3rem;
   text-align: center;
+  font-size: 0.9rem;
   font-weight: bold;
   color: #2c3e50;
 }
@@ -1620,11 +1623,12 @@ select:focus {
 
 .calendar-day {
   background: white;
-  min-height: 80px;
-  padding: 0.3rem;
+  min-height: 60px;
+  padding: 0.25rem;
   position: relative;
   cursor: pointer;
   transition: background 0.2s;
+  font-size: 0.8rem;
 }
 
 .calendar-day:hover {
@@ -1654,7 +1658,9 @@ select:focus {
 
 .day-number {
   font-weight: bold;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
+  font-size: 0.9rem;
+  line-height: 1.1;
 }
 
 .work-info {
@@ -1958,9 +1964,6 @@ select:focus {
   font-size: 0.5rem;
 }
 
-.calendar-day {
-  min-height: 140px;
-}
 
 /* オンコール表示（カレンダー内） */
 .calendar-day.has-oncall {
