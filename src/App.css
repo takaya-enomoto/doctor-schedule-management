@@ -957,8 +957,8 @@ header {
     linear-gradient(135deg, #8b4513 0%, #a0522d 25%, #cd853f 50%, #a0522d 75%, #8b4513 100%),
     url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='0.05'%3E%3Cpath d='M20 20c0 5.5-4.5 10-10 10s-10-4.5-10-10 4.5-10 10-10 10 4.5 10 10zm10 0c0 5.5-4.5 10-10 10s-10-4.5-10-10 4.5-10 10-10 10 4.5 10 10z'/%3E%3C/g%3E%3C/svg%3E");
   color: #f4e4c1;
-  padding: 0.4rem;
-  margin-bottom: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.3rem;
   border-radius: 8px;
   border: 3px solid #daa520;
   box-shadow: 
@@ -1048,32 +1048,33 @@ header h1 {
 
 /* Google Drive自動保存コントロール - コンパクト版 */
 .auto-save-controls {
-  margin-top: 0.5rem;
-  padding: 0.4rem 0.6rem;
+  margin-top: 0.3rem;
+  padding: 0.25rem 0.4rem;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid rgba(218, 165, 32, 0.5);
   display: inline-block;
   width: auto;
+  font-size: 0.8rem;
 }
 
 .auto-save-toggle {
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
 
 .auto-save-toggle label {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.25rem;
   color: #f4e4c1;
   font-weight: 400;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
 .auto-save-toggle input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   accent-color: #daa520;
 }
 
@@ -1382,7 +1383,7 @@ header h1 {
 .content-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
@@ -1567,7 +1568,7 @@ select:focus {
 .calendar-header {
   background: #34495e;
   color: white;
-  padding: 0.6rem;
+  padding: 0.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2417,9 +2418,9 @@ select:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   gap: 1.5rem;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 1rem;
   background: #f8f9fa;
   border-radius: 6px;
 }
