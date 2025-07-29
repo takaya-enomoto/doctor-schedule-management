@@ -22,7 +22,7 @@ import {
 } from './utils/storage'
 import { checkAndCreateAutoBackup } from './utils/autoBackup'
 import { setupPrintColorSupport } from './utils/printHelpers'
-import { useAutoSaveToGoogleDrive } from './hooks/useAutoSaveToGoogleDrive'
+// import { useAutoSaveToGoogleDrive } from './hooks/useAutoSaveToGoogleDrive' // 一時的に無効化
 import { LABELS } from './constants/labels'
 import { initializeTranslationPrevention } from './utils/translationPrevention'
 
@@ -54,16 +54,22 @@ function App() {
   const [editingNurseOnCall, setEditingNurseOnCall] = useState<NurseOnCall | null>(null)
   const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(false)
 
-  // Google Drive自動保存フック
-  const { lastSaveTime, isSaving, saveStatus, manualSave } = useAutoSaveToGoogleDrive({
-    schedules,
-    persons,
-    leaveRequests,
-    oneTimeWork,
-    onCalls,
-    nurseOnCalls,
-    autoSaveEnabled
-  })
+  // Google Drive自動保存フック - 一時的に無効化
+  // const { lastSaveTime, isSaving, saveStatus, manualSave } = useAutoSaveToGoogleDrive({
+  //   schedules,
+  //   persons,
+  //   leaveRequests,
+  //   oneTimeWork,
+  //   onCalls,
+  //   nurseOnCalls,
+  //   autoSaveEnabled
+  // })
+  
+  // 一時的なダミー値
+  const lastSaveTime = null
+  const isSaving = false
+  const saveStatus = 'idle' as 'idle' | 'success' | 'error'
+  const manualSave = () => {}
 
   // サイドバーリスト表示用：過去の単発勤務を削除する関数
   const removeExpiredOneTimeWorkForSidebar = (oneTimeWorkList: OneTimeWork[]): OneTimeWork[] => {

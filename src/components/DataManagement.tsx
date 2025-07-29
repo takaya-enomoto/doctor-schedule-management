@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { createBackup, exportBackup, importBackup, validateBackupVersion, mergeBackupData } from '../utils/backup'
 import type { BackupData } from '../utils/backup'
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall } from '../types'
-import GoogleDriveSync from './GoogleDriveSync'
+// import GoogleDriveSync from './GoogleDriveSync' // 一時的に無効化
 import { LABELS } from '../constants/labels'
 import { formatDataSummary } from '../utils/formatters'
 
@@ -133,7 +133,8 @@ const DataManagement = ({
         </div>
       )}
 
-      {/* Google Drive連携 */}
+      {/* Google Drive連携 - 一時的に無効化 */}
+      {/*
       <div className="google-drive-section">
         <GoogleDriveSync
           schedules={schedules}
@@ -145,6 +146,7 @@ const DataManagement = ({
           onRestore={onRestore}
         />
       </div>
+      */}
 
       {/* ローカルファイル管理 */}
       <div className="local-backup-section">
