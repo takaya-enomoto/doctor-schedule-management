@@ -1,6 +1,16 @@
 /* ゼルダの伝説風 カスタムフォント */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=MedievalSharp&display=swap');
 
+/* 🎯 レイアウト調整用CSS変数 - ここを変更するだけで全体調整可能 */
+:root {
+  --content-padding-left: 1rem;
+  --control-section-padding: 0.5rem 0.8rem;
+  --control-section-gap: 1.5rem;
+  --location-buttons-gap: 0.5rem;
+  --display-toggles-gap: 1rem;
+  --gdrive-btn-size: 2rem;
+}
+
 /* 基本的なリセットと明示的なスクロール設定 */
 * {
   margin: 0;
@@ -1396,7 +1406,7 @@ header h1 {
   width: 100%;
   max-width: 1400px;
   margin: 0;
-  padding-left: 1rem;
+  padding-left: var(--content-padding-left);
 }
 
 .calendar-section {
@@ -2446,8 +2456,8 @@ select:focus {
   justify-content: flex-start;
   align-items: center;
   margin-bottom: 0.25rem;
-  gap: 1.5rem;
-  padding: 0.5rem 0.8rem;
+  gap: var(--control-section-gap);
+  padding: var(--control-section-padding);
   background: #f8f9fa;
   border-radius: 6px;
 }
@@ -2509,6 +2519,84 @@ select:focus {
   gap: 1rem;
   align-items: center;
   margin-left: 0;
+}
+
+/* Google Drive保存セクション - 小さいボタン */
+.gdrive-save-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto; /* 右端に配置 */
+}
+
+.gdrive-toggle-btn {
+  background: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: var(--gdrive-btn-size);
+  height: var(--gdrive-btn-size);
+}
+
+.gdrive-toggle-btn:hover {
+  background: #3367d6;
+  transform: translateY(-1px);
+}
+
+.gdrive-toggle-btn.active {
+  background: #0f9d58;
+}
+
+.gdrive-toggle-btn.active:hover {
+  background: #0d8043;
+}
+
+.gdrive-status-mini {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.saving-mini {
+  color: #ff9800;
+}
+
+.success-mini {
+  color: #4caf50;
+}
+
+.error-mini {
+  color: #f44336;
+}
+
+.manual-save-btn-mini {
+  background: #34a853;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.manual-save-btn-mini:hover {
+  background: #2e7d32;
+  transform: translateY(-1px);
+}
+
+.manual-save-btn-mini:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .toggle-group > label {

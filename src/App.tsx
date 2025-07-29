@@ -384,41 +384,6 @@ function App() {
               {LABELS.MENU.PRINT}
             </button>
           </div>
-          
-          {/* Google Drive自動保存コントロール */}
-          <div className="auto-save-controls">
-            <div className="auto-save-toggle">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={autoSaveEnabled}
-                  onChange={(e) => setAutoSaveEnabled(e.target.checked)}
-                />
-{LABELS.GOOGLE_DRIVE.AUTO_SAVE}
-              </label>
-            </div>
-            
-            {autoSaveEnabled && (
-              <div className="auto-save-status">
-                {isSaving && <span className="saving">💾 保存中...</span>}
-                {saveStatus === 'success' && <span className="success">✅ 保存完了</span>}
-                {saveStatus === 'error' && <span className="error">❌ 保存失敗</span>}
-                {lastSaveTime && !isSaving && saveStatus === 'idle' && (
-                  <span className="last-save">
-                    最終保存: {format(lastSaveTime, 'MM/dd HH:mm')}
-                  </span>
-                )}
-                <button 
-                  onClick={manualSave}
-                  disabled={isSaving}
-                  className="manual-save-button"
-                  title="手動でGoogle Driveに保存"
-                >
-                  💾 今すぐ保存
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </header>
       <main>
@@ -473,6 +438,35 @@ function App() {
               />
               看護師オンコール
             </label>
+          </div>
+          
+          {/* Google Drive自動保存 - 小さいボタンとして分離 */}
+          <div className="gdrive-save-section">
+            <button 
+              className={`gdrive-toggle-btn ${autoSaveEnabled ? 'active' : ''}`}
+              onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+              title="Google Drive自動保存のON/OFF"
+            >
+              💾 {autoSaveEnabled ? 'ON' : 'OFF'}
+            </button>
+            
+            {autoSaveEnabled && (
+              <>
+                <div className="gdrive-status-mini">
+                  {isSaving && <span className="saving-mini">保存中</span>}
+                  {saveStatus === 'success' && <span className="success-mini">✅</span>}
+                  {saveStatus === 'error' && <span className="error-mini">❌</span>}
+                </div>
+                <button 
+                  onClick={manualSave}
+                  disabled={isSaving}
+                  className="manual-save-btn-mini"
+                  title="手動保存"
+                >
+                  💾
+                </button>
+              </>
+            )}
           </div>
         </div>
         
