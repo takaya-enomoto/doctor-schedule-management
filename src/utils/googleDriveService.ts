@@ -31,10 +31,20 @@ class GoogleDriveService {
 
   private async doInitialize(): Promise<void> {
     try {
+      console.log('Google Drive service initialization started')
+      
       // Google Identity Services スクリプトの読み込み
       if (!window.google) {
+        console.log('Loading Google Identity Services script')
         await this.loadGoogleIdentityServices()
       }
+
+      // Google Identity Services が利用可能かチェック
+      if (!window.google?.accounts?.oauth2) {
+        throw new Error('Google Identity Services が正しく読み込まれていません')
+      }
+
+      console.log('Creating token client with client ID:', GOOGLE_DRIVE_CONFIG.CLIENT_ID)
 
       // トークンクライアントを作成
       this.tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -43,12 +53,17 @@ class GoogleDriveService {
         callback: () => {} // コールバックはsignInで設定
       })
 
+      if (!this.tokenClient) {
+        throw new Error('Token client の作成に失敗しました')
+      }
+
+      console.log('Google Drive service initialization completed')
       this.isInitialized = true
       this.initializationPromise = null
     } catch (error) {
       this.initializationPromise = null
       console.error('Google Identity Services 初期化エラー:', error)
-      throw new Error('Google Drive APIの初期化に失敗しました')
+      throw new Error(`Google Drive APIの初期化に失敗しました: ${error}`)
     }
   }
 
@@ -70,35 +85,50 @@ class GoogleDriveService {
 
   // サインイン
   async signIn(): Promise<void> {
+    console.log('Google Drive sign-in started')
+    
     if (!this.isInitialized) {
+      console.log('Initializing service before sign-in')
       await this.initialize()
     }
 
     return new Promise((resolve, reject) => {
       try {
         if (!this.tokenClient) {
+          console.error('Token client is null')
           reject(new Error('Token client が初期化されていません'))
           return
         }
 
+        console.log('Setting up token client callback')
+        
         // コールバックを設定
         this.tokenClient.callback = (response: any) => {
+          console.log('Token client callback received:', response)
+          
           if (response.error) {
             console.error('認証エラー:', response.error)
-            reject(new Error('Google Driveへの認証に失敗しました'))
+            reject(new Error(`Google Driveへの認証に失敗しました: ${response.error}`))
+            return
+          }
+          
+          if (!response.access_token) {
+            console.error('Access token not received')
+            reject(new Error('アクセストークンが取得できませんでした'))
             return
           }
           
           this.accessToken = response.access_token
-          console.log('Google Drive にサインインしました')
+          console.log('Google Drive にサインインしました. Token:', this.accessToken?.substring(0, 20) + '...')
           resolve()
         }
 
+        console.log('Requesting access token')
         // 認証を開始
         this.tokenClient.requestAccessToken()
       } catch (error) {
         console.error('サインインエラー:', error)
-        reject(new Error('Google Driveへのサインインに失敗しました'))
+        reject(new Error(`Google Driveへのサインインに失敗しました: ${error}`))
       }
     })
   }
