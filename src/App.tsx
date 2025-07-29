@@ -24,6 +24,7 @@ import { checkAndCreateAutoBackup } from './utils/autoBackup'
 import { setupPrintColorSupport } from './utils/printHelpers'
 import { useAutoSaveToGoogleDrive } from './hooks/useAutoSaveToGoogleDrive'
 import { LABELS } from './constants/labels'
+import { initializeTranslationPrevention } from './utils/translationPrevention'
 
 type ModalType = 'person' | 'leave' | 'onetime' | 'oncall' | 'nurse-oncall' | 'backup' | 'print' | null
 
@@ -85,6 +86,9 @@ function App() {
   }
 
   useEffect(() => {
+    // 翻訳防止機能を初期化
+    initializeTranslationPrevention()
+    
     const savedSchedules = loadSchedules()
     const savedPersons = loadPersons()
     const savedLeaveRequests = loadLeaveRequests()

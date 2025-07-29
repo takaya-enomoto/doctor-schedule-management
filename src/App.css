@@ -983,15 +983,53 @@ header h1 {
   gap: 0.5rem;
 }
 
-/* 翻訳防止 */
+/* 翻訳防止 - 強化版 */
 .no-translate,
-.notranslate {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
+.notranslate,
+[translate="no"] {
+  /* ハードウェアアクセラレーションを強制 */
+  -webkit-transform: translateZ(0) scale(1);
+  transform: translateZ(0) scale(1);
+  
+  /* フォント特性を固定 */
+  font-feature-settings: "kern" 1;
+  -webkit-font-feature-settings: "kern" 1;
+  -moz-font-feature-settings: "kern" 1;
+  
+  /* テキスト描画を最適化 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* 選択を無効化して翻訳を困難にする */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
-.no-translate::before {
+.no-translate::before,
+.notranslate::before {
   content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+}
+
+/* 特に重要なテキスト用の翻訳防止 */
+.oncall-text,
+.doctor-type-text {
+  position: relative;
+  display: inline-block;
+}
+
+.oncall-text::after,
+.doctor-type-text::after {
+  content: attr(data-original);
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Google Drive自動保存コントロール - コンパクト版 */
