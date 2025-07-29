@@ -21,11 +21,19 @@ class GoogleDriveService {
   private isInitialized = false
   private authInstance: any = null
   private driveAPI: any = null
+  private tokenClient: any = null
+  private initializationPromise: Promise<void> | null = null
 
   // Google API の初期化
   async initialize(): Promise<void> {
     if (this.isInitialized) return
+    if (this.initializationPromise) return this.initializationPromise
 
+    this.initializationPromise = this.doInitialize()
+    return this.initializationPromise
+  }
+
+  private async doInitialize(): Promise<void> {
     try {
       // Google API スクリプトが読み込まれていない場合は読み込む
       if (!window.gapi) {
@@ -37,15 +45,24 @@ class GoogleDriveService {
         await this.loadGoogleIdentityServices()
       }
 
-      // clientの初期化を待つ
+      // clientの初期化を待つ（auth2は使用しない）
       await new Promise<void>((resolve, reject) => {
         window.gapi.load('client', async () => {
           try {
+            // auth2を使わずにclientのみ初期化
             await window.gapi.client.init({
               apiKey: GOOGLE_DRIVE_CONFIG.API_KEY,
               discoveryDocs: GOOGLE_DRIVE_CONFIG.DISCOVERY_DOCS,
             })
             this.driveAPI = window.gapi.client.drive
+            
+            // トークンクライアントを事前に作成
+            this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+              client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+              scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' '),
+              callback: () => {} // 実際のコールバックはsignInで設定
+            })
+            
             resolve()
           } catch (error) {
             reject(error)
@@ -54,7 +71,9 @@ class GoogleDriveService {
       })
 
       this.isInitialized = true
+      this.initializationPromise = null
     } catch (error) {
+      this.initializationPromise = null
       console.error('Google API 初期化エラー:', error)
       throw new Error('Google Drive APIの初期化に失敗しました')
     }
@@ -70,7 +89,14 @@ class GoogleDriveService {
 
       const script = document.createElement('script')
       script.src = 'https://apis.google.com/js/api.js'
-      script.onload = () => resolve()
+      script.onload = () => {
+        // auth2の自動初期化を防ぐ
+        if (window.gapi && window.gapi.auth2) {
+          // 既存のauth2インスタンスをクリア
+          delete window.gapi.auth2
+        }
+        resolve()
+      }
       script.onerror = () => reject(new Error('Google API スクリプトの読み込みに失敗しました'))
       document.head.appendChild(script)
     })
@@ -100,30 +126,31 @@ class GoogleDriveService {
 
     return new Promise((resolve, reject) => {
       try {
-        // Google Identity Services (GIS) を使用した認証
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
-          scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' '),
-          callback: (response: any) => {
-            if (response.error) {
-              console.error('認証エラー:', response.error)
-              reject(new Error('Google Driveへの認証に失敗しました'))
-              return
-            }
-            
-            // アクセストークンを設定
-            window.gapi.client.setToken({
-              access_token: response.access_token
-            })
-            
-            console.log('Google Drive にサインインしました')
-            this.authInstance = { isSignedIn: true, accessToken: response.access_token }
-            resolve()
+        if (!this.tokenClient) {
+          reject(new Error('Token client が初期化されていません'))
+          return
+        }
+
+        // コールバックを設定
+        this.tokenClient.callback = (response: any) => {
+          if (response.error) {
+            console.error('認証エラー:', response.error)
+            reject(new Error('Google Driveへの認証に失敗しました'))
+            return
           }
-        })
+          
+          // アクセストークンを設定
+          window.gapi.client.setToken({
+            access_token: response.access_token
+          })
+          
+          console.log('Google Drive にサインインしました')
+          this.authInstance = { isSignedIn: true, accessToken: response.access_token }
+          resolve()
+        }
 
         // 認証を開始
-        tokenClient.requestAccessToken()
+        this.tokenClient.requestAccessToken()
       } catch (error) {
         console.error('サインインエラー:', error)
         reject(new Error('Google Driveへのサインインに失敗しました'))
@@ -149,7 +176,10 @@ class GoogleDriveService {
 
   // サインイン状態の取得
   isSignedIn(): boolean {
-    return this.authInstance && this.authInstance.isSignedIn === true
+    return this.authInstance && 
+           this.authInstance.isSignedIn === true && 
+           this.authInstance.accessToken &&
+           window.gapi?.client?.getToken()?.access_token
   }
 
   // ユーザー情報の取得
