@@ -6,7 +6,14 @@ import type { BackupData } from './backup'
 declare global {
   interface Window {
     gapi: any
-    google: any
+    google: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: any) => any
+          revoke: (token: string) => void
+        }
+      }
+    }
   }
 }
 
@@ -25,20 +32,10 @@ class GoogleDriveService {
         await this.loadGoogleAPI()
       }
 
-      // auth2の初期化を待つ
-      await new Promise<void>((resolve, reject) => {
-        window.gapi.load('auth2', async () => {
-          try {
-            await window.gapi.auth2.init({
-              client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
-            })
-            this.authInstance = window.gapi.auth2.getAuthInstance()
-            resolve()
-          } catch (error) {
-            reject(error)
-          }
-        })
-      })
+      // Google Identity Services (GIS) スクリプトの読み込み
+      if (!window.google) {
+        await this.loadGoogleIdentityServices()
+      }
 
       // clientの初期化を待つ
       await new Promise<void>((resolve, reject) => {
@@ -46,9 +43,7 @@ class GoogleDriveService {
           try {
             await window.gapi.client.init({
               apiKey: GOOGLE_DRIVE_CONFIG.API_KEY,
-              clientId: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
               discoveryDocs: GOOGLE_DRIVE_CONFIG.DISCOVERY_DOCS,
-              scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' ')
             })
             this.driveAPI = window.gapi.client.drive
             resolve()
@@ -81,20 +76,51 @@ class GoogleDriveService {
     })
   }
 
+  // Google Identity Services スクリプトの動的読み込み
+  private loadGoogleIdentityServices(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (window.google) {
+        resolve()
+        return
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://accounts.google.com/gsi/client'
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error('Google Identity Services スクリプトの読み込みに失敗しました'))
+      document.head.appendChild(script)
+    })
+  }
+
   // サインイン
   async signIn(): Promise<void> {
     if (!this.isInitialized) {
       await this.initialize()
     }
 
-    // authInstanceが正しく初期化されているか確認
-    if (!this.authInstance) {
-      throw new Error('Google認証の初期化が完了していません。再度初期化してください。')
-    }
-
     try {
-      const user = await this.authInstance.signIn()
-      console.log('Google Drive にサインインしました:', user.getBasicProfile().getName())
+      // Google Identity Services (GIS) を使用した認証
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+        scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' '),
+        callback: (response: any) => {
+          if (response.error) {
+            console.error('認証エラー:', response.error)
+            throw new Error('Google Driveへの認証に失敗しました')
+          }
+          
+          // アクセストークンを設定
+          window.gapi.client.setToken({
+            access_token: response.access_token
+          })
+          
+          console.log('Google Drive にサインインしました')
+          this.authInstance = { isSignedIn: true, accessToken: response.access_token }
+        }
+      })
+
+      // 認証を開始
+      tokenClient.requestAccessToken()
     } catch (error) {
       console.error('サインインエラー:', error)
       throw new Error('Google Driveへのサインインに失敗しました')
@@ -104,14 +130,22 @@ class GoogleDriveService {
   // サインアウト
   async signOut(): Promise<void> {
     if (this.authInstance) {
-      await this.authInstance.signOut()
+      // トークンを取り消し
+      if (this.authInstance.accessToken) {
+        window.google.accounts.oauth2.revoke(this.authInstance.accessToken)
+      }
+      
+      // gapi トークンをクリア
+      window.gapi.client.setToken(null)
+      
+      this.authInstance = null
       console.log('Google Drive からサインアウトしました')
     }
   }
 
   // サインイン状態の取得
   isSignedIn(): boolean {
-    return this.authInstance && this.authInstance.isSignedIn.get()
+    return this.authInstance && this.authInstance.isSignedIn === true
   }
 
   // ユーザー情報の取得
