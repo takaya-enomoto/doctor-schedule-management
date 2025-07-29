@@ -98,33 +98,37 @@ class GoogleDriveService {
       await this.initialize()
     }
 
-    try {
-      // Google Identity Services (GIS) を使用した認証
-      const tokenClient = window.google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
-        scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' '),
-        callback: (response: any) => {
-          if (response.error) {
-            console.error('認証エラー:', response.error)
-            throw new Error('Google Driveへの認証に失敗しました')
+    return new Promise((resolve, reject) => {
+      try {
+        // Google Identity Services (GIS) を使用した認証
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+          scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' '),
+          callback: (response: any) => {
+            if (response.error) {
+              console.error('認証エラー:', response.error)
+              reject(new Error('Google Driveへの認証に失敗しました'))
+              return
+            }
+            
+            // アクセストークンを設定
+            window.gapi.client.setToken({
+              access_token: response.access_token
+            })
+            
+            console.log('Google Drive にサインインしました')
+            this.authInstance = { isSignedIn: true, accessToken: response.access_token }
+            resolve()
           }
-          
-          // アクセストークンを設定
-          window.gapi.client.setToken({
-            access_token: response.access_token
-          })
-          
-          console.log('Google Drive にサインインしました')
-          this.authInstance = { isSignedIn: true, accessToken: response.access_token }
-        }
-      })
+        })
 
-      // 認証を開始
-      tokenClient.requestAccessToken()
-    } catch (error) {
-      console.error('サインインエラー:', error)
-      throw new Error('Google Driveへのサインインに失敗しました')
-    }
+        // 認証を開始
+        tokenClient.requestAccessToken()
+      } catch (error) {
+        console.error('サインインエラー:', error)
+        reject(new Error('Google Driveへのサインインに失敗しました'))
+      }
+    })
   }
 
   // サインアウト
