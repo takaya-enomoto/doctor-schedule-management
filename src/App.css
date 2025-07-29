@@ -1391,46 +1391,15 @@ header h1 {
 }
 
 .sidebar {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: row;
   gap: 1.5rem;
   width: 100%;
-  max-height: 70vh;
-  overflow-y: visible;
 }
 
-/* サイドバー全体のスクロールバースタイリング */
-.sidebar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sidebar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.sidebar::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-@media (max-width: 1024px) and (min-width: 769px) {
-  .sidebar {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    overflow-y: auto;
-  }
+.sidebar > * {
+  flex: 1;
+  min-width: 0;
 }
 
 .schedule-form {
