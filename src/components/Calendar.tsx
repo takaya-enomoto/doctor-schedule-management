@@ -125,8 +125,8 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
   const renderCalendarDays = () => {
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(currentDate)
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 })
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 })
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1, locale: ja })
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1, locale: ja })
     const today = getTodaySafe() // キャッシュされた今日の日付を使用
 
     const days = []
