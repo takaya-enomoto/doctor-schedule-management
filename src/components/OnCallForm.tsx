@@ -169,7 +169,9 @@ const OnCallForm: React.FC<OnCallFormProps> = ({ onAddOnCall, persons, editingOn
 
   return (
     <form onSubmit={handleSubmit} className="oncall-form">
-      <h2>オンコール登録</h2>
+      <h2 className="no-translate" translate="no">
+        <span className="notranslate">オンコール登録</span>
+      </h2>
       
       <div className="form-group">
         <label htmlFor="person">担当者:</label>

@@ -354,16 +354,18 @@ function App() {
               {LABELS.MENU.ADD_ONETIME_WORK}
             </button>
             <button 
-              className="add-button oncall-add"
+              className="add-button oncall-add no-translate"
               onClick={() => setActiveModal('oncall')}
+              translate="no"
             >
-              {LABELS.MENU.ADD_ONCALL}
+              <span className="notranslate">{LABELS.MENU.ADD_ONCALL}</span>
             </button>
             <button 
-              className="add-button nurse-oncall-add"
+              className="add-button nurse-oncall-add no-translate"
               onClick={() => setActiveModal('nurse-oncall')}
+              translate="no"
             >
-              {LABELS.MENU.ADD_NURSE_ONCALL}
+              <span className="notranslate">{LABELS.MENU.ADD_NURSE_ONCALL}</span>
             </button>
             <button 
               className="add-button backup-add"

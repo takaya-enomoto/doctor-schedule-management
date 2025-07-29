@@ -983,6 +983,17 @@ header h1 {
   gap: 0.5rem;
 }
 
+/* 翻訳防止 */
+.no-translate,
+.notranslate {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+.no-translate::before {
+  content: "";
+}
+
 /* Google Drive自動保存コントロール - コンパクト版 */
 .auto-save-controls {
   margin-top: 0.5rem;
