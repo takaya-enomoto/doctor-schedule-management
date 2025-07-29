@@ -3,7 +3,7 @@
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { LABELS } from '../constants/labels'
-import type { DoctorType, Location, ShiftType } from '../types'
+import type { EmploymentType, Location } from '../types'
 
 /**
  * 日付を日本語形式でフォーマット
@@ -22,7 +22,7 @@ export const formatDateTime = (date: Date): string => {
 /**
  * 医師タイプを日本語に変換
  */
-export const formatDoctorType = (type: DoctorType): string => {
+export const formatEmploymentType = (type: EmploymentType): string => {
   switch (type) {
     case 'full-time':
       return LABELS.DOCTOR.FULL_TIME
@@ -40,28 +40,13 @@ export const formatLocation = (location: Location): string => {
   switch (location) {
     case 'minoo':
       return LABELS.DOCTOR.MAIN_HOSPITAL
-    case 'branch':
+    case 'ibaraki':
       return LABELS.DOCTOR.BRANCH_HOSPITAL
     default:
       return location
   }
 }
 
-/**
- * シフトタイプを日本語に変換
- */
-export const formatShiftType = (shiftType: ShiftType): string => {
-  switch (shiftType) {
-    case 'day':
-      return LABELS.ONCALL.DAY_SHIFT
-    case 'night':
-      return LABELS.ONCALL.NIGHT_SHIFT
-    case 'all-day':
-      return LABELS.ONCALL.ALL_DAY
-    default:
-      return shiftType
-  }
-}
 
 /**
  * 曜日番号を日本語に変換 (0=日曜日, 1=月曜日, ...)

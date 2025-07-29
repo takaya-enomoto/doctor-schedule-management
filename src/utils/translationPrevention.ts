@@ -103,10 +103,10 @@ export const withTranslationProtection = <P extends object>(
       }
     }, [])
     
-    return (
-      <div ref={ref} className="notranslate" translate="no">
-        <WrappedComponent {...props} />
-      </div>
+    return React.createElement(
+      'div',
+      { ref, className: 'notranslate', translate: 'no' as any },
+      React.createElement(WrappedComponent, props)
     )
   }
 }

@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import googleDriveService, { type GoogleAPIState } from '../utils/googleDriveService'
+import googleDriveService from '../utils/googleDriveService'
+import { type GoogleAPIState } from '../utils/googleDriveConfig'
 import { createBackup } from '../utils/backup'
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall } from '../types'
-import { LABELS } from '../constants/labels'
-import { formatDateTime, formatFileSize } from '../utils/formatters'
 
 interface GoogleDriveSyncProps {
   schedules: WorkSchedule[]

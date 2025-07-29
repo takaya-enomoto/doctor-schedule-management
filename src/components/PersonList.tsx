@@ -1,6 +1,6 @@
 import type { Person } from '../types'
 import { LABELS } from '../constants/labels'
-import { formatDoctorType, formatLocation, formatWorkDays } from '../utils/formatters'
+import { formatEmploymentType, formatLocation, formatWorkDays } from '../utils/formatters'
 
 interface PersonListProps {
   persons: Person[]
@@ -52,7 +52,7 @@ const PersonList: React.FC<PersonListProps> = ({ persons, onRemovePerson }) => {
                  '第2・4週のみ'}
               </div>
               <div className={`person-employment ${person.employmentType}`}>
-{formatDoctorType(person.employmentType)}
+{formatEmploymentType(person.employmentType)}
               </div>
               <div className="person-location">
 {formatLocation(person.location)}
