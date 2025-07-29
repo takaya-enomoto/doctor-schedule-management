@@ -3,6 +3,8 @@ import { createBackup, exportBackup, importBackup, validateBackupVersion, mergeB
 import type { BackupData } from '../utils/backup'
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall } from '../types'
 import GoogleDriveSync from './GoogleDriveSync'
+import { LABELS } from '../constants/labels'
+import { formatDataSummary } from '../utils/formatters'
 
 interface DataManagementProps {
   schedules: WorkSchedule[]
@@ -97,18 +99,14 @@ const DataManagement = ({
   }
 
   const getDataSummary = () => {
-    const total = schedules.length + persons.length + leaveRequests.length + oneTimeWork.length + onCalls.length + nurseOnCalls.length
-    return {
-      total,
-      details: [
-        `医師: ${persons.length}人`,
-        `スケジュール: ${schedules.length}件`,
-        `休み希望: ${leaveRequests.length}件`,
-        `単発勤務: ${oneTimeWork.length}件`,
-        `オンコール: ${onCalls.length}件`,
-        `看護師オンコール: ${nurseOnCalls.length}件`
-      ]
-    }
+    return formatDataSummary({
+      doctors: persons.length,
+      schedules: schedules.length,
+      leaveRequests: leaveRequests.length,
+      oneTimeWork: oneTimeWork.length,
+      onCalls: onCalls.length,
+      nurseOnCalls: nurseOnCalls.length
+    })
   }
 
   const summary = getDataSummary()
@@ -117,9 +115,9 @@ const DataManagement = ({
     <div className="data-management">
       {/* データ概要 */}
       <div className="data-overview">
-        <h3>📊 現在のデータ概要</h3>
+        <h3>📊 {LABELS.DATA_MANAGEMENT.OVERVIEW}</h3>
         <div className="data-summary">
-          <p><strong>合計: {summary.total} 件</strong></p>
+          <p><strong>{LABELS.DATA_MANAGEMENT.TOTAL}: {summary.total} 件</strong></p>
           <div className="data-grid">
             {summary.details.map((detail, index) => (
               <span key={index} className="data-item">{detail}</span>

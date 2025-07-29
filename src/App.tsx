@@ -23,6 +23,7 @@ import {
 import { checkAndCreateAutoBackup } from './utils/autoBackup'
 import { setupPrintColorSupport } from './utils/printHelpers'
 import { useAutoSaveToGoogleDrive } from './hooks/useAutoSaveToGoogleDrive'
+import { LABELS } from './constants/labels'
 
 type ModalType = 'person' | 'leave' | 'onetime' | 'oncall' | 'nurse-oncall' | 'backup' | 'print' | null
 
@@ -332,49 +333,49 @@ function App() {
     <div className="app">
       <header>
         <div className="header-content">
-          <h1>医師出勤管理</h1>
+          <h1>{LABELS.APP_NAME}</h1>
           <div className="header-buttons">
             <button 
               className="add-button person-add"
               onClick={() => setActiveModal('person')}
             >
-              + 医師追加
+              {LABELS.MENU.ADD_DOCTOR}
             </button>
             <button 
               className="add-button leave-add"
               onClick={() => setActiveModal('leave')}
             >
-              + 休み希望
+              {LABELS.MENU.ADD_LEAVE_REQUEST}
             </button>
             <button 
               className="add-button onetime-add"
               onClick={() => setActiveModal('onetime')}
             >
-              + 単発勤務
+              {LABELS.MENU.ADD_ONETIME_WORK}
             </button>
             <button 
               className="add-button oncall-add"
               onClick={() => setActiveModal('oncall')}
             >
-              + オンコール
+              {LABELS.MENU.ADD_ONCALL}
             </button>
             <button 
               className="add-button nurse-oncall-add"
               onClick={() => setActiveModal('nurse-oncall')}
             >
-              + 看護師オンコール
+              {LABELS.MENU.ADD_NURSE_ONCALL}
             </button>
             <button 
               className="add-button backup-add"
               onClick={() => setActiveModal('backup')}
             >
-              📁 データ管理
+              {LABELS.MENU.DATA_MANAGEMENT}
             </button>
             <button 
               className="add-button print-add"
               onClick={() => setActiveModal('print')}
             >
-              🖨️ 印刷
+              {LABELS.MENU.PRINT}
             </button>
           </div>
           
@@ -387,7 +388,7 @@ function App() {
                   checked={autoSaveEnabled}
                   onChange={(e) => setAutoSaveEnabled(e.target.checked)}
                 />
-                🌐 Google Drive自動保存
+{LABELS.GOOGLE_DRIVE.AUTO_SAVE}
               </label>
             </div>
             

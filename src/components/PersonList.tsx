@@ -1,5 +1,6 @@
 import type { Person } from '../types'
-import { getWeekDayName } from '../utils/scheduleGenerator'
+import { LABELS } from '../constants/labels'
+import { formatDoctorType, formatLocation, formatWorkDays } from '../utils/formatters'
 
 interface PersonListProps {
   persons: Person[]
@@ -12,22 +13,22 @@ const PersonList: React.FC<PersonListProps> = ({ persons, onRemovePerson }) => {
       onRemovePerson(id)
     } catch (error) {
       console.error('Error removing person:', error)
-      alert('削除中にエラーが発生しました。ページをリロードしてお試しください。')
+      alert(`${LABELS.MESSAGES.ERROR}: 削除中にエラーが発生しました。ページをリロードしてお試しください。`)
     }
   }
 
   if (persons.length === 0) {
     return (
       <div className="person-list">
-        <h2>登録済み医師</h2>
-        <p className="no-persons">まだ医師が登録されていません。</p>
+        <h2>{LABELS.DOCTOR.REGISTERED_DOCTORS}</h2>
+        <p className="no-persons">{LABELS.DOCTOR.NO_DOCTORS}</p>
       </div>
     )
   }
 
   return (
     <div className="person-list">
-      <h2>登録済み医師 ({persons.length}人)</h2>
+      <h2>{LABELS.DOCTOR.REGISTERED_DOCTORS} ({persons.length}人)</h2>
       <div className="person-items">
         {persons.map((person) => (
           <div key={person.id} className="person-item">
@@ -43,7 +44,7 @@ const PersonList: React.FC<PersonListProps> = ({ persons, onRemovePerson }) => {
                 {person.startTime} - {person.endTime}
               </div>
               <div className="person-days">
-                勤務日: {person.workDays.map(day => getWeekDayName(day)).join(', ')}
+                勤務日: {formatWorkDays(person.workDays)}
               </div>
               <div className="person-pattern">
                 {person.workPattern === 'all-weeks' ? '毎週' :
@@ -51,10 +52,10 @@ const PersonList: React.FC<PersonListProps> = ({ persons, onRemovePerson }) => {
                  '第2・4週のみ'}
               </div>
               <div className={`person-employment ${person.employmentType}`}>
-                {person.employmentType === 'full-time' ? '常勤' : '非常勤'}
+{formatDoctorType(person.employmentType)}
               </div>
               <div className="person-location">
-                {person.location === 'minoo' ? '本院箕面' : '分院茨木'}
+{formatLocation(person.location)}
               </div>
               {person.description && (
                 <div className="person-description">
