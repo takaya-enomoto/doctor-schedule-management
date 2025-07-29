@@ -1395,7 +1395,8 @@ header h1 {
   gap: 0.25rem;
   width: 100%;
   max-width: 1400px;
-  margin: 0 auto;
+  margin: 0;
+  padding-left: 1rem;
 }
 
 .calendar-section {
@@ -2442,11 +2443,11 @@ select:focus {
 /* コントロールセクション */
 .control-section {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 0.25rem;
   gap: 1.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.8rem;
   background: #f8f9fa;
   border-radius: 6px;
 }
@@ -2507,6 +2508,7 @@ select:focus {
   display: flex;
   gap: 1rem;
   align-items: center;
+  margin-left: 0;
 }
 
 .toggle-group > label {
