@@ -1378,11 +1378,9 @@ header h1 {
 }
 
 .content-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
-  align-items: start;
-  min-height: calc(100vh - 200px);
 }
 
 .calendar-section {
@@ -1418,11 +1416,6 @@ header h1 {
 }
 
 @media (max-width: 768px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
   .sidebar {
     grid-template-columns: 1fr;
     gap: 1rem;
