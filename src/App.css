@@ -1,6 +1,15 @@
 /* ゼルダの伝説風 カスタムフォント */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=MedievalSharp&display=swap');
 
+/* 基本的なリセットと明示的なスクロール設定 */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 #root {
   max-width: 1400px;
   margin: 0 auto;
@@ -938,6 +947,8 @@
     linear-gradient(135deg, #1a1a0d 0%, #2d2d1a 50%, #0d0d06 100%);
   color: #f4e4c1;
   font-family: 'Cinzel', serif;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ゼルダ風 ヘッダー */
