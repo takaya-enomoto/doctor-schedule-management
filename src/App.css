@@ -2,9 +2,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=MedievalSharp&display=swap');
 
 /* 基本的なリセットと明示的なスクロール設定 */
-html, body {
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
   height: auto;
   overflow-x: hidden;
   overflow-y: auto;
@@ -949,6 +955,8 @@ html, body {
   font-family: 'Cinzel', serif;
   overflow-y: auto;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 /* ゼルダ風 ヘッダー */
@@ -958,8 +966,8 @@ header {
     url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000' fill-opacity='0.05'%3E%3Cpath d='M20 20c0 5.5-4.5 10-10 10s-10-4.5-10-10 4.5-10 10-10 10 4.5 10 10zm10 0c0 5.5-4.5 10-10 10s-10-4.5-10-10 4.5-10 10-10 10 4.5 10 10z'/%3E%3C/g%3E%3C/svg%3E");
   color: #f4e4c1;
   padding: 0.4rem 0.6rem;
-  margin: 0;
-  margin-bottom: 0.2rem;
+  margin: 0 !important;
+  margin-bottom: 0.2rem !important;
   border-radius: 8px;
   border: 3px solid #daa520;
   box-shadow: 
