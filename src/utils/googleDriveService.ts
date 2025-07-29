@@ -25,21 +25,37 @@ class GoogleDriveService {
         await this.loadGoogleAPI()
       }
 
-      await window.gapi.load('auth2', async () => {
-        await window.gapi.auth2.init({
-          client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+      // auth2の初期化を待つ
+      await new Promise<void>((resolve, reject) => {
+        window.gapi.load('auth2', async () => {
+          try {
+            await window.gapi.auth2.init({
+              client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+            })
+            this.authInstance = window.gapi.auth2.getAuthInstance()
+            resolve()
+          } catch (error) {
+            reject(error)
+          }
         })
-        this.authInstance = window.gapi.auth2.getAuthInstance()
       })
 
-      await window.gapi.load('client', async () => {
-        await window.gapi.client.init({
-          apiKey: GOOGLE_DRIVE_CONFIG.API_KEY,
-          clientId: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
-          discoveryDocs: GOOGLE_DRIVE_CONFIG.DISCOVERY_DOCS,
-          scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' ')
+      // clientの初期化を待つ
+      await new Promise<void>((resolve, reject) => {
+        window.gapi.load('client', async () => {
+          try {
+            await window.gapi.client.init({
+              apiKey: GOOGLE_DRIVE_CONFIG.API_KEY,
+              clientId: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+              discoveryDocs: GOOGLE_DRIVE_CONFIG.DISCOVERY_DOCS,
+              scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' ')
+            })
+            this.driveAPI = window.gapi.client.drive
+            resolve()
+          } catch (error) {
+            reject(error)
+          }
         })
-        this.driveAPI = window.gapi.client.drive
       })
 
       this.isInitialized = true
@@ -69,6 +85,11 @@ class GoogleDriveService {
   async signIn(): Promise<void> {
     if (!this.isInitialized) {
       await this.initialize()
+    }
+
+    // authInstanceが正しく初期化されているか確認
+    if (!this.authInstance) {
+      throw new Error('Google認証の初期化が完了していません。再度初期化してください。')
     }
 
     try {
