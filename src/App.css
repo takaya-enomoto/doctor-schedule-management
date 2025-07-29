@@ -1392,11 +1392,11 @@ header h1 {
 
 .sidebar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   width: 100%;
   max-height: 70vh;
-  overflow-y: auto;
+  overflow-y: visible;
 }
 
 /* サイドバー全体のスクロールバースタイリング */
@@ -1418,10 +1418,18 @@ header h1 {
   background: #a8a8a8;
 }
 
+@media (max-width: 1024px) and (min-width: 769px) {
+  .sidebar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     grid-template-columns: 1fr;
     gap: 1rem;
+    overflow-y: auto;
   }
 }
 
@@ -1833,11 +1841,12 @@ select:focus {
 /* 人員一覧 */
 .person-list {
   background: #f8f9fa;
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  max-height: 400px;
+  max-height: 350px;
   overflow-y: auto;
+  font-size: 0.9rem;
 }
 
 /* 個別リストのスクロールバースタイリング */
@@ -1869,9 +1878,11 @@ select:focus {
 
 .person-list h2 {
   margin-top: 0;
+  margin-bottom: 1rem;
   color: #2c3e50;
   border-bottom: 2px solid #e74c3c;
   padding-bottom: 0.5rem;
+  font-size: 1.1rem;
 }
 
 .no-persons {
@@ -2768,18 +2779,21 @@ select:focus {
 
 .leave-request-list {
   background: #f8f9fa;
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  max-height: 400px;
+  max-height: 350px;
   overflow-y: auto;
+  font-size: 0.9rem;
 }
 
 .leave-request-list h2 {
   margin-top: 0;
+  margin-bottom: 1rem;
   color: #2c3e50;
   border-bottom: 2px solid #e74c3c;
   padding-bottom: 0.5rem;
+  font-size: 1.1rem;
 }
 
 .no-requests {
@@ -2850,18 +2864,21 @@ select:focus {
 
 .onetime-work-list {
   background: #f8f9fa;
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  max-height: 400px;
+  max-height: 350px;
   overflow-y: auto;
+  font-size: 0.9rem;
 }
 
 .onetime-work-list h2 {
   margin-top: 0;
+  margin-bottom: 1rem;
   color: #2c3e50;
   border-bottom: 2px solid #9b59b6;
   padding-bottom: 0.5rem;
+  font-size: 1.1rem;
 }
 
 .no-onetime-work {
