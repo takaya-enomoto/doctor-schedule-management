@@ -1,11 +1,8 @@
 import { GOOGLE_DRIVE_CONFIG, type GoogleAPIState } from './googleDriveConfig'
-
-export type { GoogleAPIState }
 import type { BackupData } from './backup'
 
 declare global {
   interface Window {
-    gapi: any
     google: {
       accounts: {
         oauth2: {
@@ -19,12 +16,11 @@ declare global {
 
 class GoogleDriveService {
   private isInitialized = false
-  private authInstance: any = null
-  private driveAPI: any = null
+  private accessToken: string | null = null
   private tokenClient: any = null
   private initializationPromise: Promise<void> | null = null
 
-  // Google API の初期化
+  // Google Identity Services の初期化
   async initialize(): Promise<void> {
     if (this.isInitialized) return
     if (this.initializationPromise) return this.initializationPromise
@@ -35,71 +31,25 @@ class GoogleDriveService {
 
   private async doInitialize(): Promise<void> {
     try {
-      // Google API スクリプトが読み込まれていない場合は読み込む
-      if (!window.gapi) {
-        await this.loadGoogleAPI()
-      }
-
-      // Google Identity Services (GIS) スクリプトの読み込み
+      // Google Identity Services スクリプトの読み込み
       if (!window.google) {
         await this.loadGoogleIdentityServices()
       }
 
-      // clientの初期化を待つ（auth2は使用しない）
-      await new Promise<void>((resolve, reject) => {
-        window.gapi.load('client', async () => {
-          try {
-            // auth2を使わずにclientのみ初期化
-            await window.gapi.client.init({
-              apiKey: GOOGLE_DRIVE_CONFIG.API_KEY,
-              discoveryDocs: GOOGLE_DRIVE_CONFIG.DISCOVERY_DOCS,
-            })
-            this.driveAPI = window.gapi.client.drive
-            
-            // トークンクライアントを事前に作成
-            this.tokenClient = window.google.accounts.oauth2.initTokenClient({
-              client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
-              scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' '),
-              callback: () => {} // 実際のコールバックはsignInで設定
-            })
-            
-            resolve()
-          } catch (error) {
-            reject(error)
-          }
-        })
+      // トークンクライアントを作成
+      this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_DRIVE_CONFIG.CLIENT_ID,
+        scope: GOOGLE_DRIVE_CONFIG.SCOPES.join(' '),
+        callback: () => {} // コールバックはsignInで設定
       })
 
       this.isInitialized = true
       this.initializationPromise = null
     } catch (error) {
       this.initializationPromise = null
-      console.error('Google API 初期化エラー:', error)
+      console.error('Google Identity Services 初期化エラー:', error)
       throw new Error('Google Drive APIの初期化に失敗しました')
     }
-  }
-
-  // Google API スクリプトの動的読み込み
-  private loadGoogleAPI(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (window.gapi) {
-        resolve()
-        return
-      }
-
-      const script = document.createElement('script')
-      script.src = 'https://apis.google.com/js/api.js'
-      script.onload = () => {
-        // auth2の自動初期化を防ぐ
-        if (window.gapi && window.gapi.auth2) {
-          // 既存のauth2インスタンスをクリア
-          delete window.gapi.auth2
-        }
-        resolve()
-      }
-      script.onerror = () => reject(new Error('Google API スクリプトの読み込みに失敗しました'))
-      document.head.appendChild(script)
-    })
   }
 
   // Google Identity Services スクリプトの動的読み込み
@@ -139,13 +89,8 @@ class GoogleDriveService {
             return
           }
           
-          // アクセストークンを設定
-          window.gapi.client.setToken({
-            access_token: response.access_token
-          })
-          
+          this.accessToken = response.access_token
           console.log('Google Drive にサインインしました')
-          this.authInstance = { isSignedIn: true, accessToken: response.access_token }
           resolve()
         }
 
@@ -160,39 +105,51 @@ class GoogleDriveService {
 
   // サインアウト
   async signOut(): Promise<void> {
-    if (this.authInstance) {
+    if (this.accessToken) {
       // トークンを取り消し
-      if (this.authInstance.accessToken) {
-        window.google.accounts.oauth2.revoke(this.authInstance.accessToken)
-      }
-      
-      // gapi トークンをクリア
-      window.gapi.client.setToken(null)
-      
-      this.authInstance = null
+      window.google.accounts.oauth2.revoke(this.accessToken)
+      this.accessToken = null
       console.log('Google Drive からサインアウトしました')
     }
   }
 
   // サインイン状態の取得
   isSignedIn(): boolean {
-    return this.authInstance && 
-           this.authInstance.isSignedIn === true && 
-           this.authInstance.accessToken &&
-           window.gapi?.client?.getToken()?.access_token
+    return this.accessToken !== null
   }
 
   // ユーザー情報の取得
   getCurrentUser(): GoogleAPIState['user'] | null {
     if (!this.isSignedIn()) return null
 
-    // Google Identity Services では詳細なユーザー情報は別途取得が必要
-    // 現在は基本情報のみ返す
     return {
       name: 'ユーザー',
       email: '',
       imageUrl: ''
     }
+  }
+
+  // REST APIを使った直接のHTTPリクエスト
+  private async apiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+    if (!this.accessToken) {
+      throw new Error('Google Driveにサインインしてください')
+    }
+
+    const response = await fetch(`https://www.googleapis.com/drive/v3/${endpoint}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`API request failed: ${response.status} ${error}`)
+    }
+
+    return response.json()
   }
 
   // アプリケーション専用フォルダの作成または取得
@@ -203,24 +160,23 @@ class GoogleDriveService {
 
     try {
       // 既存フォルダを検索
-      const response = await this.driveAPI.files.list({
-        q: `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-        spaces: 'drive'
-      })
+      const searchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+      const response = await this.apiRequest(`files?q=${encodeURIComponent(searchQuery)}&spaces=drive`)
 
-      if (response.result.files && response.result.files.length > 0) {
-        return response.result.files[0].id
+      if (response.files && response.files.length > 0) {
+        return response.files[0].id
       }
 
       // フォルダが存在しない場合は作成
-      const createResponse = await this.driveAPI.files.create({
-        resource: {
+      const createResponse = await this.apiRequest('files', {
+        method: 'POST',
+        body: JSON.stringify({
           name: GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME,
           mimeType: 'application/vnd.google-apps.folder'
-        }
+        })
       })
 
-      return createResponse.result.id
+      return createResponse.id
     } catch (error) {
       console.error('フォルダ作成エラー:', error)
       throw new Error('Google Drive フォルダの作成に失敗しました')
@@ -249,7 +205,7 @@ class GoogleDriveService {
       const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.authInstance.accessToken}`
+          'Authorization': `Bearer ${this.accessToken}`
         },
         body: form
       })
@@ -276,13 +232,12 @@ class GoogleDriveService {
     try {
       const folderId = await this.getOrCreateAppFolder()
       
-      const response = await this.driveAPI.files.list({
-        q: `'${folderId}' in parents and name contains '${GOOGLE_DRIVE_CONFIG.BACKUP_FILE_PREFIX}' and trashed=false`,
-        fields: 'files(id,name,modifiedTime,size)',
-        orderBy: 'modifiedTime desc'
-      })
+      const searchQuery = `'${folderId}' in parents and name contains '${GOOGLE_DRIVE_CONFIG.BACKUP_FILE_PREFIX}' and trashed=false`
+      const response = await this.apiRequest(
+        `files?q=${encodeURIComponent(searchQuery)}&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc`
+      )
 
-      return response.result.files || []
+      return response.files || []
     } catch (error) {
       console.error('ファイル一覧取得エラー:', error)
       throw new Error('バックアップファイル一覧の取得に失敗しました')
@@ -296,12 +251,17 @@ class GoogleDriveService {
     }
 
     try {
-      const response = await this.driveAPI.files.get({
-        fileId: fileId,
-        alt: 'media'
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        }
       })
 
-      const backupData = JSON.parse(response.body)
+      if (!response.ok) {
+        throw new Error('ファイル読み込みに失敗しました')
+      }
+
+      const backupData = await response.json()
       
       // 日付文字列をDateオブジェクトに変換
       if (backupData.data) {
@@ -331,8 +291,8 @@ class GoogleDriveService {
     }
 
     try {
-      await this.driveAPI.files.delete({
-        fileId: fileId
+      await this.apiRequest(`files/${fileId}`, {
+        method: 'DELETE'
       })
       console.log('バックアップファイルを削除しました')
     } catch (error) {
@@ -344,7 +304,7 @@ class GoogleDriveService {
   // 状態の取得
   getState(): GoogleAPIState {
     return {
-      isLoaded: !!window.gapi,
+      isLoaded: !!window.google,
       isSignedIn: this.isSignedIn(),
       isInitialized: this.isInitialized,
       user: this.getCurrentUser() || undefined
