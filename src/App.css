@@ -42,7 +42,7 @@ html, body {
   /* ページ設定 - A4横向け（29.7cm x 21cm） */
   @page {
     size: A4 landscape;
-    margin: 0.3in 0.2in; /* 上下0.76cm、左右0.51cm */
+    margin: 0.4cm 0.3cm; /* より小さなマージンで最大限活用 */
   }
   
   /* 印刷時は削除ボタンを非表示 */
@@ -86,6 +86,7 @@ html, body {
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
+    page-break-inside: avoid !important;
   }
   
   #root {
@@ -150,6 +151,8 @@ html, body {
     width: 100% !important;
     height: auto !important;
     page-break-inside: avoid !important;
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
     font-size: 9px !important;
   }
   
@@ -222,16 +225,16 @@ html, body {
     grid-template-columns: repeat(7, 1fr) !important;
     grid-template-rows: repeat(6, 1fr) !important;
     /* A4横向け：約29.7cm幅、21cm高さ
-       余白を除いた実際の印刷エリア：約28.6cm幅、19.5cm高さ
-       ヘッダー類を除いた残り高さ：約16.2cm (コンパクト化) */
-    height: 16.2cm !important;
+       マージン0.4cm x2 = 0.8cm、実際の印刷エリア：約29cm幅、20.2cm高さ
+       ヘッダー(約1.5cm)を除いた残り高さ：約18.5cm */
+    height: 18.5cm !important;
   }
   
   .calendar-day {
     height: auto !important;
-    min-height: 2.7cm !important; /* 少し小さく */
-    max-height: 2.7cm !important;
-    padding: 0.06rem !important; /* より小さく */
+    min-height: 3.0cm !important; /* 6行で18.5cm ÷ 6 = 約3.08cm */
+    max-height: 3.0cm !important;
+    padding: 0.08rem !important; /* 少し余裕を持たせる */
     border-right: 1px solid #000 !important;
     border-bottom: 1px solid #000 !important;
     background: white !important;
@@ -289,13 +292,13 @@ html, body {
   }
   
   .person-work-item {
-    margin-bottom: 0.01rem !important; /* さらに詰める */
-    padding: 0.02rem 0.04rem !important; /* さらに小さく */
+    margin-bottom: 0.05rem !important; /* 少し余裕を持たせる */
+    padding: 0.05rem 0.08rem !important; /* 読みやすさを保つ */
     border-radius: 2px !important;
-    border-left: 2px solid #27ae60 !important; /* 細く */
+    border-left: 2px solid #27ae60 !important;
     border-right: 1px dashed #27ae60 !important;
-    font-size: 0.5rem !important; /* 小さく */
-    line-height: 1 !important; /* 詰める */
+    font-size: 0.55rem !important; /* 少し大きく */
+    line-height: 1.1 !important; /* 少し余裕 */
     background: linear-gradient(135deg, #d4edda, #c3e6cb) !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -361,10 +364,10 @@ html, body {
   }
   
   .onetime-work-item {
-    margin-bottom: 0.01rem !important; /* さらに詰める */
-    padding: 0.02rem 0.04rem !important; /* さらに小さく */
+    margin-bottom: 0.05rem !important; /* 少し余裕を持たせる */
+    padding: 0.05rem 0.08rem !important; /* 読みやすさを保つ */
     background: linear-gradient(135deg, #ffecd1, #ffdfba) !important;
-    border: 1px solid #fd7e14 !important; /* 細く */
+    border: 1px solid #fd7e14 !important;
     border-radius: 2px !important;
     font-size: 0.55rem !important;
     line-height: 1.05 !important;
