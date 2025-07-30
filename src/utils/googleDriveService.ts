@@ -420,16 +420,16 @@ class GoogleDriveService {
     // 常に共同編集用の固定ファイル名を使用
     const fileName = 'shared_schedule_data.json'
 
-    // 既存の共有ファイルを検索
+    // 既存の共有ファイルを検索（共有ドライブ対応）
     const searchQuery = `name='${fileName}' and '${folderId}' in parents and trashed=false`
-    const existingFiles = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}`)
+    const existingFiles = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}&supportsAllDrives=true&includeItemsFromAllDrives=true`)
     
     if (existingFiles.files && existingFiles.files.length > 0) {
       // 既存ファイルを更新
       const fileId = existingFiles.files[0].id
       console.log('📝 Updating existing shared file:', fileId)
       
-      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media&supportsAllDrives=true`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
@@ -457,7 +457,7 @@ class GoogleDriveService {
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }))
     form.append('file', new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' }))
 
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.accessToken}`
