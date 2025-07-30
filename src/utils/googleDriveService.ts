@@ -23,6 +23,7 @@ interface TokenClientConfig {
   scope: string
   callback: (response: TokenResponse) => void
   error_callback?: (error: any) => void
+  ux_mode?: 'popup' | 'redirect'
 }
 
 interface TokenClient {
@@ -122,7 +123,16 @@ class GoogleDriveService {
           },
           error_callback: (error: any) => {
             console.error('❌ Token client error:', error)
-          }
+            if (error.type === 'popup_blocked_by_browser') {
+              alert('ポップアップがブロックされました。ブラウザの設定でポップアップを許可してください。')
+            } else if (error.type === 'popup_closed_by_user') {
+              console.log('ユーザーがポップアップを閉じました')
+            } else {
+              console.error('認証エラー:', error)
+            }
+          },
+          // COOP問題対応：ポップアップ方式を明示的に指定
+          ux_mode: 'popup'
         })
 
         if (this.tokenClient) {
