@@ -45,6 +45,18 @@ html, body {
     margin: 0.4cm 0.3cm; /* より小さなマージンで最大限活用 */
   }
   
+  /* 1ページ目の不要コンテンツを完全に削除 */
+  @page :first {
+    margin: 0 !important;
+  }
+  
+  /* 印刷時のページ制御 */
+  * {
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
   /* 印刷時は削除ボタンを非表示 */
   .delete-oncall-btn,
   .delete-nurse-oncall-btn {
@@ -66,9 +78,10 @@ html, body {
     box-shadow: none !important;
   }
   
-  /* 印刷時に非表示にする要素 */
+  /* 印刷時に非表示にする要素 - より包括的に */
   .no-print,
   header,
+  .header-content,
   .header-buttons,
   .control-section,
   .sidebar,
@@ -78,8 +91,20 @@ html, body {
   .location-buttons,
   .display-toggles,
   .content-grid .sidebar,
-  main > .control-section {
+  main > .control-section,
+  .app > header,
+  .app header,
+  body > *:not(.app),
+  #root > *:not(.app),
+  .app > *:not(main) {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
   }
   
   /* 基本レイアウト - 全体の高さを制御 */
@@ -94,6 +119,16 @@ html, body {
     background: white !important;
     background-color: white !important;
     background-image: none !important;
+    position: relative !important;
+  }
+  
+  /* 余分な空白を完全に除去 */
+  html::before,
+  html::after,
+  body::before,
+  body::after {
+    display: none !important;
+    content: none !important;
   }
   
   .app {
@@ -108,29 +143,46 @@ html, body {
     background-image: none !important;
   }
   
-  /* 印刷時はカレンダーのみ表示 */
-  .app > * {
+  /* 印刷時は body 直下で完全制御 */
+  body * {
     display: none !important;
+    visibility: hidden !important;
   }
   
-  .app main {
+  /* カレンダー表示に必要な要素のみを明示的に表示 */
+  body,
+  #root,
+  .app,
+  .app main,
+  .app main .content-grid,
+  .app main .content-grid .calendar-section,
+  .calendar-section .calendar,
+  .calendar .calendar-header,
+  .calendar .calendar-grid,
+  .calendar-grid .weekday-header,
+  .calendar-grid .calendar-days,
+  .weekday-header .weekday,
+  .calendar-days .calendar-day,
+  .calendar-day *,
+  .calendar-header * {
     display: block !important;
+    visibility: visible !important;
   }
   
-  .app main > * {
-    display: none !important;
+  /* Grid レイアウト専用の display プロパティ */
+  .weekday-header {
+    display: grid !important;
   }
   
-  .app main .content-grid {
-    display: block !important;
+  .calendar-days {
+    display: grid !important;
   }
   
-  .app main .content-grid > * {
-    display: none !important;
-  }
-  
-  .app main .content-grid .calendar-section {
-    display: block !important;
+  /* Flex レイアウト専用の display プロパティ */
+  .calendar-day,
+  .person-info-compact,
+  .onetime-info-compact {
+    display: flex !important;
   }
   
   #root {
@@ -196,7 +248,7 @@ html, body {
     height: auto !important;
   }
   
-  /* カレンダー全体の調整 - 残りスペースを最大活用 */
+  /* カレンダー全体の調整 - ページ先頭から表示 */
   .calendar {
     width: 100% !important;
     height: auto !important;
@@ -208,6 +260,12 @@ html, body {
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
   .calendar-header {
