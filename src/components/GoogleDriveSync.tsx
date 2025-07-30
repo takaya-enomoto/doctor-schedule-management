@@ -48,18 +48,26 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null)
   const [backupFiles, setBackupFiles] = useState<DriveFile[]>([])
   const [showFileList, setShowFileList] = useState(false)
+  const [sharedFolderId, setSharedFolderId] = useState<string>('')
+  const [showSharedFolderSetup, setShowSharedFolderSetup] = useState(false)
 
-  // Google API状態の監視
+  // Google API状態と共有フォルダIDの監視
   useEffect(() => {
     const updateState = () => {
       setApiState(googleDriveService.getState())
+      
+      // 共有フォルダIDの初期化
+      const currentSharedId = googleDriveService.getSharedFolderId()
+      if (currentSharedId && currentSharedId !== sharedFolderId) {
+        setSharedFolderId(currentSharedId)
+      }
     }
 
     updateState()
     const interval = setInterval(updateState, 1000) // 1秒ごとにチェック
 
     return () => clearInterval(interval)
-  }, [])
+  }, [sharedFolderId])
 
   // Google Drive初期化
   const handleInitialize = async () => {
@@ -120,15 +128,30 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
     }
   }
 
-  // Google Driveにバックアップを保存
+  // 共有フォルダIDの設定
+  const handleSetSharedFolder = () => {
+    if (sharedFolderId.trim()) {
+      googleDriveService.setSharedFolderId(sharedFolderId.trim())
+      setMessage({ type: 'success', text: '共有フォルダを設定しました' })
+    } else {
+      googleDriveService.setSharedFolderId(null)
+      setMessage({ type: 'info', text: '共有フォルダ設定を解除しました' })
+    }
+    setShowSharedFolderSetup(false)
+  }
+
+  // Google Driveにバックアップを保存（共同編集対応）
   const handleSaveToGoogleDrive = async () => {
     setIsLoading(true)
     setMessage(null)
 
     try {
       const backupData = createBackup(schedules, persons, leaveRequests, oneTimeWork, onCalls, nurseOnCalls)
-      await googleDriveService.saveBackup(backupData)
-      setMessage({ type: 'success', text: 'Google Driveにバックアップを保存しました' })
+      const isSharedMode = !!googleDriveService.getSharedFolderId()
+      await googleDriveService.saveBackup(backupData, isSharedMode)
+      
+      const modeText = isSharedMode ? '共有フォルダに' : 'Google Driveに'
+      setMessage({ type: 'success', text: `${modeText}バックアップを保存しました` })
       
       // ファイル一覧を更新
       if (showFileList) {
@@ -277,13 +300,89 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
 
         {apiState.isSignedIn && (
           <>
+            {/* 共有フォルダ設定セクション */}
+            <div className="shared-folder-section">
+              <div className="shared-folder-status">
+                {googleDriveService.getSharedFolderId() ? (
+                  <div className="shared-mode-active">
+                    <span className="shared-icon">👥</span>
+                    <strong>共同編集モード</strong>
+                    <span className="shared-folder-id">ID: {googleDriveService.getSharedFolderId()}</span>
+                  </div>
+                ) : (
+                  <div className="personal-mode">
+                    <span className="personal-icon">👤</span>
+                    <span>個人モード</span>
+                  </div>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => setShowSharedFolderSetup(!showSharedFolderSetup)}
+                className="action-button setup-button"
+                disabled={isLoading}
+              >
+                {showSharedFolderSetup ? '設定を閉じる' : '🔧 共有設定'}
+              </button>
+            </div>
+
+            {showSharedFolderSetup && (
+              <div className="shared-folder-setup">
+                <h4>🤝 共同編集設定</h4>
+                <p>チーム全員で同じデータを共有・編集できます。</p>
+                
+                <div className="setup-instructions">
+                  <h5>設定手順:</h5>
+                  <ol>
+                    <li>管理者がGoogle Driveで「医師スケジュール管理システム」フォルダを作成</li>
+                    <li>フォルダを右クリック→「共有」→チームメンバーを「編集者」として追加</li>
+                    <li>フォルダURLからIDをコピー（例: 1abc...xyz の部分）</li>
+                    <li>下記にフォルダIDを入力</li>
+                  </ol>
+                </div>
+                
+                <div className="folder-id-input">
+                  <label>共有フォルダID:</label>
+                  <input
+                    type="text"
+                    value={sharedFolderId}
+                    onChange={(e) => setSharedFolderId(e.target.value)}
+                    placeholder="1abc2def3ghi4jkl5mno6pqr7stu8vwx9yz0"
+                    className="folder-id-field"
+                  />
+                  <div className="setup-actions">
+                    <button 
+                      onClick={handleSetSharedFolder}
+                      className="action-button set-button"
+                      disabled={isLoading}
+                    >
+                      設定
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setSharedFolderId('')
+                        googleDriveService.setSharedFolderId(null)
+                        setMessage({ type: 'info', text: '共有フォルダ設定を解除しました' })
+                      }}
+                      className="action-button clear-button"
+                      disabled={isLoading}
+                    >
+                      解除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="signed-in-actions">
               <button 
                 onClick={handleSaveToGoogleDrive} 
                 disabled={isLoading}
                 className="action-button save-button"
               >
-                {isLoading ? '保存中...' : '📤 Google Driveに保存'}
+                {isLoading ? '保存中...' : 
+                  googleDriveService.getSharedFolderId() ? '👥 共有フォルダに保存' : '📤 Google Driveに保存'
+                }
               </button>
 
               <button 

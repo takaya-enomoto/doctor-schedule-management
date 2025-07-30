@@ -4014,3 +4014,156 @@ button:disabled {
   font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo UI', sans-serif;
   line-height: 1.5;
 }
+
+/* ========================
+   共有フォルダ機能のスタイル 
+   ======================== */
+
+.shared-folder-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #dee2e6;
+}
+
+.shared-folder-status {
+  flex: 1;
+}
+
+.shared-mode-active {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #28a745;
+  font-weight: 600;
+}
+
+.personal-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6c757d;
+}
+
+.shared-folder-id {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-family: monospace;
+  background: #f8f9fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.shared-folder-setup {
+  background: linear-gradient(135deg, #e8f5e8, #d4f4d4);
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.shared-folder-setup h4 {
+  color: #155724;
+  margin-bottom: 0.5rem;
+}
+
+.shared-folder-setup p {
+  color: #155724;
+  margin-bottom: 1rem;
+  font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo UI', sans-serif;
+}
+
+.setup-instructions {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.setup-instructions h5 {
+  color: #155724;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.setup-instructions ol {
+  color: #155724;
+  margin: 0;
+  padding-left: 1.5rem;
+  font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo UI', sans-serif;
+  font-size: 0.9rem;
+}
+
+.setup-instructions li {
+  margin-bottom: 0.3rem;
+  line-height: 1.4;
+}
+
+.folder-id-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.folder-id-input label {
+  color: #155724;
+  font-weight: 600;
+  font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo UI', sans-serif;
+}
+
+.folder-id-field {
+  padding: 0.5rem;
+  border: 2px solid #28a745;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.folder-id-field:focus {
+  outline: none;
+  border-color: #20c997;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+}
+
+.setup-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.action-button.setup-button {
+  background: linear-gradient(135deg, #17a2b8, #138496);
+  color: white;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.action-button.setup-button:hover {
+  background: linear-gradient(135deg, #1395aa, #105965);
+}
+
+.action-button.set-button {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  flex: 1;
+}
+
+.action-button.set-button:hover {
+  background: linear-gradient(135deg, #20c997, #17a2b8);
+}
+
+.action-button.clear-button {
+  background: linear-gradient(135deg, #6c757d, #5a6268);
+  color: white;
+  flex: 1;
+}
+
+.action-button.clear-button:hover {
+  background: linear-gradient(135deg, #5a6268, #495057);
+}
