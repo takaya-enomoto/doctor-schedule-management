@@ -62,7 +62,7 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
     }
 
     updateState()
-    const interval = setInterval(updateState, 1000) // 1秒ごとにチェック
+    const interval = setInterval(updateState, 5000) // 5秒ごとにチェック（頻度を下げて無限ループを防止）
 
     return () => clearInterval(interval)
   }, [])

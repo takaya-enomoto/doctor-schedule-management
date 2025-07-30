@@ -16,8 +16,8 @@ export const useAuth = () => {
     // 初回チェック
     checkAuthStatus()
 
-    // 1秒ごとに認証状態をチェック（GoogleDriveSyncと同様）
-    const interval = setInterval(checkAuthStatus, 1000)
+    // 10秒ごとに認証状態をチェック（頻度を下げて無限ループを防止）
+    const interval = setInterval(checkAuthStatus, 10000)
 
     return () => clearInterval(interval)
   }, [])

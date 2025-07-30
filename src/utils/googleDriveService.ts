@@ -205,7 +205,10 @@ class GoogleDriveService {
   // サインイン状態の確認
   isSignedIn(): boolean {
     const signedIn = this.accessToken !== null
-    console.log('🔍 Sign-in status:', signedIn)
+    // ログの頻度を制限（本番環境では出力しない）
+    if (import.meta.env.DEV) {
+      console.log('🔍 Sign-in status:', signedIn)
+    }
     return signedIn
   }
 
