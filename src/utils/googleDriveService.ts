@@ -249,7 +249,17 @@ class GoogleDriveService {
     const allFolders = await this.findAllAppFolders()
     
     if (allFolders.length > 0) {
-      // 2. 共有フォルダを最優先（より厳密な判定）
+      // 2. 共有ドライブ内のフォルダを最優先
+      const sharedDriveFolders = allFolders.filter(folder => folder.driveId)
+      if (sharedDriveFolders.length > 0) {
+        const latestSharedDrive = sharedDriveFolders.sort((a, b) => 
+          new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
+        )[0]
+        console.log('✅ Using shared drive folder:', latestSharedDrive.id, latestSharedDrive.name, `(DriveId: ${latestSharedDrive.driveId})`)
+        return latestSharedDrive.id
+      }
+
+      // 3. 共有フォルダを次に優先
       const sharedFolders = allFolders.filter(folder => {
         const isSharedByFlag = folder.shared === true
         const hasMultiplePermissions = folder.permissions && folder.permissions.length > 1
@@ -272,7 +282,7 @@ class GoogleDriveService {
         return latestShared.id
       }
       
-      // 3. 共有フォルダがない場合は最新のフォルダを使用
+      // 4. 共有フォルダがない場合は最新のフォルダを使用
       const latestFolder = allFolders.sort((a, b) => 
         new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
       )[0]
@@ -294,32 +304,49 @@ class GoogleDriveService {
     return createResult.id
   }
 
-  // フォルダ名で全てのアプリフォルダを検索
+  // フォルダ名で全てのアプリフォルダを検索（マイドライブ + 共有ドライブ）
   private async findAllAppFolders(): Promise<any[]> {
     try {
       console.log('🔍 Searching all folders with name:', GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME)
       
-      // フォルダ名で検索（共有・個人問わず）
-      const searchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
-      
-      const searchResult = await this.apiCall(
-        `files?q=${encodeURIComponent(searchQuery)}&fields=files(id,name,shared,permissions(id,type,role,emailAddress),modifiedTime,ownedByMe,owners(displayName,emailAddress))`
+      // 1. マイドライブ内での検索
+      const personalSearchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+      const personalResult = await this.apiCall(
+        `files?q=${encodeURIComponent(personalSearchQuery)}&fields=files(id,name,shared,permissions(id,type,role,emailAddress),modifiedTime,ownedByMe,owners(displayName,emailAddress))`
       )
 
-      if (searchResult.files && searchResult.files.length > 0) {
-        console.log(`📁 Found ${searchResult.files.length} folder(s) with name "${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}":`)
-        searchResult.files.forEach((folder: any, index: number) => {
+      // 2. 共有ドライブ内での検索
+      const sharedDriveSearchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+      const sharedDriveResult = await this.apiCall(
+        `files?q=${encodeURIComponent(sharedDriveSearchQuery)}&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name,shared,permissions(id,type,role,emailAddress),modifiedTime,ownedByMe,owners(displayName,emailAddress),driveId)`
+      )
+
+      // 3. 結果を結合
+      const allFiles = [
+        ...(personalResult.files || []),
+        ...(sharedDriveResult.files || [])
+      ]
+
+      console.log('📁 Search results:')
+      console.log(`  - Personal drive: ${personalResult.files?.length || 0} folders`)
+      console.log(`  - Shared drives: ${sharedDriveResult.files?.length || 0} folders`)
+
+      if (allFiles.length > 0) {
+        console.log(`📁 Found ${allFiles.length} folder(s) with name "${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}":`)
+        allFiles.forEach((folder: any, index: number) => {
           const isShared = folder.shared === true || (folder.permissions && folder.permissions.length > 1)
+          const isInSharedDrive = folder.driveId ? true : false
           console.log(`  ${index + 1}. ID: ${folder.id}`)
           console.log(`    - Name: ${folder.name}`)
+          console.log(`    - In Shared Drive: ${isInSharedDrive}`)
+          console.log(`    - DriveId: ${folder.driveId || 'N/A'}`)
           console.log(`    - Shared: ${folder.shared}`)
           console.log(`    - OwnedByMe: ${folder.ownedByMe}`)
           console.log(`    - Permissions count: ${folder.permissions ? folder.permissions.length : 'undefined'}`)
-          console.log(`    - Permissions:`, folder.permissions)
           console.log(`    - IsShared (calculated): ${isShared}`)
           console.log(`    - ModifiedTime: ${folder.modifiedTime}`)
         })
-        return searchResult.files
+        return allFiles
       } else {
         console.log('📁 No folders found with name:', GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME)
         return []
@@ -404,14 +431,17 @@ class GoogleDriveService {
     const sharedFileQuery = `'${folderId}' in parents and name='shared_schedule_data.json' and trashed=false`
     const backupFileQuery = `'${folderId}' in parents and name contains '${GOOGLE_DRIVE_CONFIG.BACKUP_FILE_PREFIX}' and trashed=false`
     
+    // 共有ドライブ対応のパラメータ
+    const driveParams = `&supportsAllDrives=true&includeItemsFromAllDrives=true`
+    
     // 共同編集ファイルを取得
     const sharedResult = await this.apiCall(
-      `files?q=${encodeURIComponent(sharedFileQuery)}&fields=files(id,name,modifiedTime,size)`
+      `files?q=${encodeURIComponent(sharedFileQuery)}&fields=files(id,name,modifiedTime,size)${driveParams}`
     )
     
     // 従来のバックアップファイルを取得
     const backupResult = await this.apiCall(
-      `files?q=${encodeURIComponent(backupFileQuery)}&fields=files(id,name,modifiedTime,size)`
+      `files?q=${encodeURIComponent(backupFileQuery)}&fields=files(id,name,modifiedTime,size)${driveParams}`
     )
     
     // 両方のファイルを結合し、更新日時でソート
@@ -431,7 +461,7 @@ class GoogleDriveService {
   async loadBackup(fileId: string): Promise<BackupData> {
     console.log('📂 Loading backup from Google Drive:', fileId)
     
-    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`, {
       headers: {
         'Authorization': `Bearer ${this.accessToken}`
       }
@@ -465,7 +495,7 @@ class GoogleDriveService {
   async deleteBackup(fileId: string): Promise<void> {
     console.log('🗑️ Deleting backup file:', fileId)
     
-    await this.apiCall(`files/${fileId}`, {
+    await this.apiCall(`files/${fileId}?supportsAllDrives=true`, {
       method: 'DELETE'
     })
     
@@ -489,8 +519,9 @@ class GoogleDriveService {
         return { hasSharedFolder: false, hasOwnedFolder: false, folderType: 'none' }
       }
       
-      // 共有フォルダの存在確認（統一されたロジック）
+      // 共有フォルダの存在確認（共有ドライブを含む統一されたロジック）
       const sharedFolders = allFolders.filter(folder => {
+        if (folder.driveId) return true // 共有ドライブは常に共有扱い
         const isSharedByFlag = folder.shared === true
         const hasMultiplePermissions = folder.permissions && folder.permissions.length > 1
         const isNotOnlyOwned = folder.ownedByMe !== true
@@ -499,7 +530,7 @@ class GoogleDriveService {
       
       // 個人フォルダの存在確認
       const ownedFolders = allFolders.filter(folder => 
-        folder.ownedByMe === true && !sharedFolders.includes(folder)
+        !folder.driveId && folder.ownedByMe === true && !sharedFolders.includes(folder)
       )
       
       return {
