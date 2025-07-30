@@ -362,7 +362,7 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
                 className="lock-toggle-checkbox"
               />
               <span className="lock-toggle-text">
-                🔒 過去月編集ロック
+                編集ロック
               </span>
             </label>
           </div>

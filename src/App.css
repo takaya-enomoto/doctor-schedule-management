@@ -2217,7 +2217,7 @@ select:focus {
 /* 過去月ロック切り替えUI */
 .past-month-lock-toggle {
   position: absolute;
-  right: 60px;
+  right: 90px; /* トライフォース（45px）との重複を避けるため90pxに調整 */
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
@@ -2226,14 +2226,14 @@ select:focus {
 .lock-toggle-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   background: rgba(255, 255, 255, 0.9);
-  padding: 0.5rem 0.8rem;
-  border-radius: 20px;
+  padding: 0.4rem 0.7rem;
+  border-radius: 15px;
   border: 2px solid #007bff;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   transition: all 0.2s ease;
 }
@@ -2245,8 +2245,8 @@ select:focus {
 }
 
 .lock-toggle-checkbox {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   accent-color: #007bff;
   cursor: pointer;
 }
