@@ -293,7 +293,7 @@ class GoogleDriveService {
     // 4. フォルダが存在しない場合は共有ドライブ内に作成
     console.log('🔍 Step 2: No folders found, creating new app folder in shared drive...')
     
-    // 「みそらグループ業務用」共有ドライブを検索
+    // 「みそらグループ 業務用 共有ドライブ」共有ドライブを検索
     const sharedDriveId = await this.findTargetSharedDrive()
     
     if (sharedDriveId) {
@@ -323,10 +323,10 @@ class GoogleDriveService {
     }
   }
 
-  // 「みそらグループ業務用」共有ドライブのIDを取得
+  // 「みそらグループ 業務用 共有ドライブ」共有ドライブのIDを取得
   private async findTargetSharedDrive(): Promise<string | null> {
     try {
-      console.log('🔍 Searching for target shared drive: みそらグループ業務用')
+      console.log('🔍 Searching for target shared drive: みそらグループ 業務用 共有ドライブ')
       
       const result = await this.apiCall('drives?fields=drives(id,name)')
       
@@ -337,14 +337,14 @@ class GoogleDriveService {
         })
         
         const targetDrive = result.drives.find((drive: any) => 
-          drive.name === 'みそらグループ業務用'
+          drive.name === 'みそらグループ 業務用 共有ドライブ'
         )
         
         if (targetDrive) {
           console.log('✅ Found target shared drive:', targetDrive.id)
           return targetDrive.id
         } else {
-          console.log('❌ Target shared drive "みそらグループ業務用" not found')
+          console.log('❌ Target shared drive "みそらグループ 業務用 共有ドライブ" not found')
           return null
         }
       } else {
