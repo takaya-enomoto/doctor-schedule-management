@@ -1,5 +1,4 @@
 import { useMemo, useEffect, useState } from 'react'
-import { usePastMonthLock } from '../hooks/usePastMonthLock'
 import { isPastMonth } from '../utils/dateUtils'
 import { 
   format, 
@@ -33,14 +32,26 @@ interface CalendarProps {
   setCurrentDate: (date: Date) => void
   onRemoveOnCall: (id: string) => void
   onRemoveNurseOnCall: (id: string) => void
+  isLockEnabled: boolean
+  setLockEnabled: (enabled: boolean) => void
 }
 
-const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, oneTimeWork, onCalls, nurseOnCalls, selectedLocation, showOnCall, showNurseOnCall, showFullTime, showPartTime, currentDate, setCurrentDate, onRemoveOnCall, onRemoveNurseOnCall }) => {
+const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, oneTimeWork, onCalls, nurseOnCalls, selectedLocation, showOnCall, showNurseOnCall, showFullTime, showPartTime, currentDate, setCurrentDate, onRemoveOnCall, onRemoveNurseOnCall, isLockEnabled, setLockEnabled }) => {
   // 強制再レンダリング用のstate
   const [renderKey, setRenderKey] = useState(0)
   
-  // 過去月ロック機能
-  const { checkPastMonthEdit, isPastMonthDate, isLockEnabled, setLockEnabled } = usePastMonthLock()
+  // 過去月ロック機能 - App.tsxから渡されたpropsを使用
+  const checkPastMonthEdit = (date: Date): boolean => {
+    if (isLockEnabled && isPastMonth(date)) {
+      alert(`${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, '0')}月の勤務予定は変更できません。過去の月の編集はロックされています。`)
+      return false
+    }
+    return true
+  }
+  
+  const isPastMonthDate = (date: Date): boolean => {
+    return isPastMonth(date)
+  }
   
   // selectedLocation、currentDate、表示設定が変更されたときに強制再レンダリング
   useEffect(() => {

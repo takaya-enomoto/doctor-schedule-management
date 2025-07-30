@@ -43,7 +43,7 @@ function App() {
   const { isAuthenticated, isLoading } = useAuth()
   
   // 過去月ロック機能
-  const { checkPastMonthEdit } = usePastMonthLock()
+  const { checkPastMonthEdit, isLockEnabled, setLockEnabled } = usePastMonthLock()
   
   const [schedules, setSchedules] = useState<WorkSchedule[]>([])
   const [persons, setPersons] = useState<Person[]>([])
@@ -584,6 +584,8 @@ function App() {
                 setCurrentDate={setCalendarDate}
                 onRemoveOnCall={removeOnCall}
                 onRemoveNurseOnCall={removeNurseOnCall}
+                isLockEnabled={isLockEnabled}
+                setLockEnabled={setLockEnabled}
               />
             </ErrorBoundary>
           </div>
