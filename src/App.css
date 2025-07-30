@@ -143,33 +143,42 @@ html, body {
     background-image: none !important;
   }
   
-  /* 印刷時は body 直下で完全制御 */
-  body * {
+  /* 印刷時はカレンダー以外の要素を非表示 */
+  .app > *:not(main) {
     display: none !important;
     visibility: hidden !important;
   }
   
-  /* カレンダー表示に必要な要素のみを明示的に表示 */
-  body,
-  #root,
-  .app,
-  .app main,
-  .app main .content-grid,
-  .app main .content-grid .calendar-section,
-  .calendar-section .calendar,
-  .calendar .calendar-header,
-  .calendar .calendar-grid,
-  .calendar-grid .weekday-header,
-  .calendar-grid .calendar-days,
-  .weekday-header .weekday,
-  .calendar-days .calendar-day,
-  .calendar-day *,
-  .calendar-header * {
-    display: block !important;
+  .app main > *:not(.content-grid) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  .content-grid > *:not(.calendar-section) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  /* カレンダー関連要素は表示を維持 */
+  .calendar-section,
+  .calendar-section *,
+  .calendar,
+  .calendar *,
+  .calendar-header,
+  .calendar-header *,
+  .calendar-grid,
+  .calendar-grid *,
+  .weekday-header,
+  .weekday-header *,
+  .calendar-days,
+  .calendar-days *,
+  .calendar-day,
+  .calendar-day * {
+    display: revert !important;
     visibility: visible !important;
   }
   
-  /* Grid レイアウト専用の display プロパティ */
+  /* 必要な display プロパティを明示的に設定 */
   .weekday-header {
     display: grid !important;
   }
@@ -178,8 +187,10 @@ html, body {
     display: grid !important;
   }
   
-  /* Flex レイアウト専用の display プロパティ */
-  .calendar-day,
+  .calendar-day {
+    display: flex !important;
+  }
+  
   .person-info-compact,
   .onetime-info-compact {
     display: flex !important;
@@ -248,7 +259,7 @@ html, body {
     height: auto !important;
   }
   
-  /* カレンダー全体の調整 - ページ先頭から表示 */
+  /* カレンダー全体の調整 - 残りスペースを最大活用 */
   .calendar {
     width: 100% !important;
     height: auto !important;
@@ -260,12 +271,10 @@ html, body {
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    display: block !important;
+    visibility: visible !important;
   }
   
   .calendar-header {
