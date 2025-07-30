@@ -223,15 +223,15 @@ html, body {
     grid-template-rows: repeat(6, 1fr) !important;
     /* A4横向け：約29.7cm幅、21cm高さ
        余白を除いた実際の印刷エリア：約28.6cm幅、19.5cm高さ
-       ヘッダー類を除いた残り高さ：約17.5cm */
-    height: 17.5cm !important;
+       ヘッダー類を除いた残り高さ：約16.2cm (コンパクト化) */
+    height: 16.2cm !important;
   }
   
   .calendar-day {
     height: auto !important;
-    min-height: 2.9cm !important;
-    max-height: 2.9cm !important;
-    padding: 0.08rem !important;
+    min-height: 2.7cm !important; /* 少し小さく */
+    max-height: 2.7cm !important;
+    padding: 0.06rem !important; /* より小さく */
     border-right: 1px solid #000 !important;
     border-bottom: 1px solid #000 !important;
     background: white !important;
@@ -289,13 +289,13 @@ html, body {
   }
   
   .person-work-item {
-    margin-bottom: 0.02rem !important;
-    padding: 0.03rem 0.06rem !important;
-    border-radius: 3px !important;
-    border-left: 3px solid #27ae60 !important;
+    margin-bottom: 0.01rem !important; /* さらに詰める */
+    padding: 0.02rem 0.04rem !important; /* さらに小さく */
+    border-radius: 2px !important;
+    border-left: 2px solid #27ae60 !important; /* 細く */
     border-right: 1px dashed #27ae60 !important;
-    font-size: 0.55rem !important;
-    line-height: 1.05 !important;
+    font-size: 0.5rem !important; /* 小さく */
+    line-height: 1 !important; /* 詰める */
     background: linear-gradient(135deg, #d4edda, #c3e6cb) !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -320,16 +320,27 @@ html, body {
     box-shadow: 0 1px 2px rgba(255, 193, 7, 0.2) !important;
   }
   
-  .person-name {
-    font-weight: 900 !important; /* より太く */
-    color: #1a252f !important; /* より濃く */
-    font-size: 0.6rem !important; /* 少し大きく */
-    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.4) !important; /* 影でくっきり */
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+  /* 印刷時のコンパクト表示調整 */
+  .person-info-compact {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.2rem !important;
+    line-height: 1 !important;
+  }
+
+  .person-info-compact .person-name {
+    font-weight: 900 !important;
+    color: #1a252f !important;
+    font-size: 0.5rem !important; /* さらに小さく */
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.4) !important;
+    flex-shrink: 0 !important;
+  }
+
+  .person-info-compact .person-time {
+    color: #555 !important;
+    font-size: 0.45rem !important; /* さらに小さく */
+    font-weight: 500 !important;
     white-space: nowrap !important;
-    display: block !important;
-    text-shadow: 0 1px 1px rgba(255,255,255,0.5) !important;
   }
   
   .person-time {
@@ -350,11 +361,11 @@ html, body {
   }
   
   .onetime-work-item {
-    margin-bottom: 0.02rem !important;
-    padding: 0.03rem 0.06rem !important;
+    margin-bottom: 0.01rem !important; /* さらに詰める */
+    padding: 0.02rem 0.04rem !important; /* さらに小さく */
     background: linear-gradient(135deg, #ffecd1, #ffdfba) !important;
-    border: 2px solid #fd7e14 !important;
-    border-radius: 3px !important;
+    border: 1px solid #fd7e14 !important; /* 細く */
+    border-radius: 2px !important;
     font-size: 0.55rem !important;
     line-height: 1.05 !important;
     overflow: hidden !important;
@@ -400,16 +411,28 @@ html, body {
     51%, 100% { opacity: 0.3; }
   }
   
-  .onetime-name {
-    font-weight: 900 !important; /* より太く */
-    color: #d35400 !important; /* より濃く */
-    font-size: 0.6rem !important; /* 少し大きく */
-    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.4) !important; /* 影でくっきり */
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+  /* 印刷時の単発勤務コンパクト表示 */
+  .onetime-info-compact {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.2rem !important;
+    line-height: 1 !important;
+    margin-bottom: 0.05rem !important;
+  }
+
+  .onetime-info-compact .onetime-name {
+    font-weight: 900 !important;
+    color: #d35400 !important;
+    font-size: 0.5rem !important; /* さらに小さく */
+    text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.4) !important;
+    flex-shrink: 0 !important;
+  }
+
+  .onetime-info-compact .onetime-time {
+    color: #555 !important;
+    font-size: 0.45rem !important; /* さらに小さく */
+    font-weight: 500 !important;
     white-space: nowrap !important;
-    display: block !important;
-    text-shadow: 0 1px 1px rgba(255,255,255,0.7) !important;
   }
   
   .onetime-work-item.recruiting .onetime-name {
