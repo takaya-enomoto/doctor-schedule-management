@@ -76,11 +76,19 @@ function App() {
   // サイドバーリスト表示用：過去の単発勤務を削除する関数
   const removeExpiredOneTimeWorkForSidebar = (oneTimeWorkList: OneTimeWork[]): OneTimeWork[] => {
     const today = startOfDay(new Date())
-    return oneTimeWorkList.filter(work => {
+    
+    const filtered = oneTimeWorkList.filter(work => {
+      // 「未定（募集中）」の場合は日付に関係なく常に表示
+      if (work.isRecruiting) {
+        return true
+      }
+      
+      // 確定した単発勤務の場合は過去の日付を除外
       const workDate = startOfDay(work.date)
-      // 今日より前の日付は削除（サイドバーのリストから除外）
       return !isBefore(workDate, today)
     })
+    
+    return filtered
   }
 
   // サイドバーリスト表示用：過去の休み希望を削除する関数
