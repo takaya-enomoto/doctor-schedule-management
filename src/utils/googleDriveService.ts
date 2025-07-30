@@ -290,18 +290,71 @@ class GoogleDriveService {
       return latestFolder.id
     }
 
-    // 4. フォルダが存在しない場合は作成
-    console.log('🔍 Step 2: No folders found, creating new app folder...')
-    const createResult = await this.apiCall('files', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME,
-        mimeType: 'application/vnd.google-apps.folder'
+    // 4. フォルダが存在しない場合は共有ドライブ内に作成
+    console.log('🔍 Step 2: No folders found, creating new app folder in shared drive...')
+    
+    // 「みそらグループ業務用」共有ドライブを検索
+    const sharedDriveId = await this.findTargetSharedDrive()
+    
+    if (sharedDriveId) {
+      console.log('📁 Creating folder in shared drive:', sharedDriveId)
+      const createResult = await this.apiCall('files?supportsAllDrives=true', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME,
+          mimeType: 'application/vnd.google-apps.folder',
+          parents: [sharedDriveId]
+        })
       })
-    })
+      console.log('✅ New app folder created in shared drive:', createResult.id)
+      return createResult.id
+    } else {
+      // 共有ドライブが見つからない場合はマイドライブに作成
+      console.log('⚠️ Shared drive not found, creating in personal drive')
+      const createResult = await this.apiCall('files', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME,
+          mimeType: 'application/vnd.google-apps.folder'
+        })
+      })
+      console.log('✅ New app folder created in personal drive:', createResult.id)
+      return createResult.id
+    }
+  }
 
-    console.log('✅ New app folder created:', createResult.id)
-    return createResult.id
+  // 「みそらグループ業務用」共有ドライブのIDを取得
+  private async findTargetSharedDrive(): Promise<string | null> {
+    try {
+      console.log('🔍 Searching for target shared drive: みそらグループ業務用')
+      
+      const result = await this.apiCall('drives?fields=drives(id,name)')
+      
+      if (result.drives && result.drives.length > 0) {
+        console.log('📁 Available shared drives:')
+        result.drives.forEach((drive: any, index: number) => {
+          console.log(`  ${index + 1}. ${drive.name} (ID: ${drive.id})`)
+        })
+        
+        const targetDrive = result.drives.find((drive: any) => 
+          drive.name === 'みそらグループ業務用'
+        )
+        
+        if (targetDrive) {
+          console.log('✅ Found target shared drive:', targetDrive.id)
+          return targetDrive.id
+        } else {
+          console.log('❌ Target shared drive "みそらグループ業務用" not found')
+          return null
+        }
+      } else {
+        console.log('❌ No shared drives found')
+        return null
+      }
+    } catch (error) {
+      console.warn('📁 Error searching for shared drives:', error)
+      return null
+    }
   }
 
   // フォルダ名で全てのアプリフォルダを検索（マイドライブ + 共有ドライブ）
