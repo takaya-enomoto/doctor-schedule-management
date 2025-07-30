@@ -7,7 +7,7 @@ export const GOOGLE_DRIVE_CONFIG = {
   
   // OAuth 2.0 スコープ
   SCOPES: [
-    'https://www.googleapis.com/auth/drive.file', // ファイルの作成・読み書き
+    'https://www.googleapis.com/auth/drive', // Google Driveの完全アクセス（共有ドライブ含む）
   ],
   
   // Discovery documents
