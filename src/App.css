@@ -51,11 +51,19 @@ html, body {
     display: none !important;
   }
   
-  /* 印刷時のカラー表示を強制 - 最優先設定 */
+  /* 印刷時の背景色を無効化 - 白背景強制 */
   html {
-    -webkit-print-color-adjust: exact !important;
-    color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: economy !important;
+    color-adjust: economy !important;
+    print-color-adjust: economy !important;
+  }
+  
+  /* 全ての要素の背景を白に強制 */
+  * {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    box-shadow: none !important;
   }
   
   /* 印刷時に非表示にする要素 */
@@ -83,6 +91,9 @@ html, body {
     padding: 0 !important;
     height: auto !important;
     overflow: hidden !important;
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
   }
   
   .app {
@@ -92,6 +103,9 @@ html, body {
     height: auto !important;
     display: block !important;
     page-break-inside: avoid !important;
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
   }
   
   /* 印刷時はカレンダーのみ表示 */
@@ -124,6 +138,9 @@ html, body {
     padding: 0 !important;
     margin: 0 !important;
     height: auto !important;
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
   }
   
   /* ヘッダー調整 - カラー対応 */
@@ -187,6 +204,10 @@ html, body {
     page-break-before: avoid !important;
     page-break-after: avoid !important;
     font-size: 9px !important;
+    background: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
   
   .calendar-header {
