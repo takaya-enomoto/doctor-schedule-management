@@ -2214,6 +2214,59 @@ select:focus {
   pointer-events: none !important;
 }
 
+/* 過去月ロック切り替えUI */
+.past-month-lock-toggle {
+  position: absolute;
+  right: 60px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.lock-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 0.8rem;
+  border-radius: 20px;
+  border: 2px solid #007bff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.lock-toggle-label:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  transform: scale(1.02);
+}
+
+.lock-toggle-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #007bff;
+  cursor: pointer;
+}
+
+.lock-toggle-text {
+  color: #333;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* ロックが無効の場合のスタイル */
+.lock-toggle-label:has(.lock-toggle-checkbox:not(:checked)) {
+  border-color: #6c757d;
+  background: rgba(248, 249, 250, 0.9);
+}
+
+.lock-toggle-label:has(.lock-toggle-checkbox:not(:checked)) .lock-toggle-text {
+  color: #6c757d;
+}
+
 
 .oncall-name {
   font-weight: 900; /* より太く */

@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState } from 'react'
 import { usePastMonthLock } from '../hooks/usePastMonthLock'
+import { isPastMonth } from '../utils/dateUtils'
 import { 
   format, 
   startOfMonth, 
@@ -39,7 +40,7 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
   const [renderKey, setRenderKey] = useState(0)
   
   // 過去月ロック機能
-  const { checkPastMonthEdit, isPastMonthDate } = usePastMonthLock()
+  const { checkPastMonthEdit, isPastMonthDate, isLockEnabled, setLockEnabled } = usePastMonthLock()
   
   // selectedLocation、currentDate、表示設定が変更されたときに強制再レンダリング
   useEffect(() => {
@@ -262,7 +263,7 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
                       }
                     }}
                     title="オンコールを削除"
-                    disabled={isPastMonthDate(onCall.date)}
+                    disabled={isLockEnabled && isPastMonthDate(onCall.date)}
                   >
                     ×
                   </button>
@@ -297,7 +298,7 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
                       }
                     }}
                     title="看護師オンコールを削除"
-                    disabled={isPastMonthDate(nurseOnCall.date)}
+                    disabled={isLockEnabled && isPastMonthDate(nurseOnCall.date)}
                   >
                     ×
                   </button>
@@ -349,6 +350,23 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
         <h2>
           {format(currentDate, 'yyyy年MM月', { locale: ja })} - {locationDisplayText}
         </h2>
+        
+        {/* 過去月の場合のみロック切り替えUIを表示 */}
+        {isPastMonth(currentDate) && (
+          <div className="past-month-lock-toggle">
+            <label className="lock-toggle-label">
+              <input
+                type="checkbox"
+                checked={isLockEnabled}
+                onChange={(e) => setLockEnabled(e.target.checked)}
+                className="lock-toggle-checkbox"
+              />
+              <span className="lock-toggle-text">
+                🔒 過去月編集ロック
+              </span>
+            </label>
+          </div>
+        )}
         <button 
           onClick={() => {
             const newDate = addMonths(currentDate, 1)

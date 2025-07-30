@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { isPastMonth, getPastMonthEditWarning } from '../utils/dateUtils'
 
 interface UsePastMonthLockResult {
@@ -22,18 +22,33 @@ interface UsePastMonthLockResult {
    * @returns true: 過去月, false: 現在または未来月
    */
   isPastMonthDate: (date: Date) => boolean
+  
+  /**
+   * 過去月ロック機能が有効かどうか
+   */
+  isLockEnabled: boolean
+  
+  /**
+   * 過去月ロック機能のON/OFF切り替え
+   * @param enabled true: ロック有効, false: ロック無効
+   */
+  setLockEnabled: (enabled: boolean) => void
 }
 
 export const usePastMonthLock = (): UsePastMonthLockResult => {
+  // デフォルトでON
+  const [isLockEnabled, setIsLockEnabled] = useState(true)
   const checkPastMonthEdit = useCallback((date: Date): boolean => {
-    if (isPastMonth(date)) {
+    if (isLockEnabled && isPastMonth(date)) {
       alert(getPastMonthEditWarning(date))
       return false
     }
     return true
-  }, [])
+  }, [isLockEnabled])
 
   const checkPastMonthEditForDates = useCallback((dates: Date[]): boolean => {
+    if (!isLockEnabled) return true
+    
     for (const date of dates) {
       if (isPastMonth(date)) {
         alert(getPastMonthEditWarning(date))
@@ -41,7 +56,7 @@ export const usePastMonthLock = (): UsePastMonthLockResult => {
       }
     }
     return true
-  }, [])
+  }, [isLockEnabled])
 
   const isPastMonthDate = useCallback((date: Date): boolean => {
     return isPastMonth(date)
@@ -50,6 +65,8 @@ export const usePastMonthLock = (): UsePastMonthLockResult => {
   return {
     checkPastMonthEdit,
     checkPastMonthEditForDates,
-    isPastMonthDate
+    isPastMonthDate,
+    isLockEnabled,
+    setLockEnabled: setIsLockEnabled
   }
 }
