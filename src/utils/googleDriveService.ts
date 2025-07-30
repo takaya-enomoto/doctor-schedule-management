@@ -237,55 +237,21 @@ class GoogleDriveService {
     return response.json()
   }
 
-  // 共有フォルダIDの設定
-  setSharedFolderId(folderId: string | null): void {
-    this.sharedFolderId = folderId
-    // ローカルストレージに保存
-    if (folderId) {
-      localStorage.setItem('sharedFolderId', folderId)
-    } else {
-      localStorage.removeItem('sharedFolderId')
-    }
-    console.log('📁 Shared folder ID set:', folderId)
-  }
-
-  // 共有フォルダIDの取得
-  getSharedFolderId(): string | null {
-    if (!this.sharedFolderId) {
-      this.sharedFolderId = localStorage.getItem('sharedFolderId')
-    }
-    return this.sharedFolderId
-  }
-
-  // アプリ専用フォルダの取得または作成（共有フォルダ対応）
+  // アプリ専用フォルダの取得または作成
   async getOrCreateAppFolder(): Promise<string> {
     console.log('📁 Getting or creating app folder')
     
-    // 共有フォルダIDが設定されている場合はそれを使用
-    const sharedId = this.getSharedFolderId()
-    if (sharedId) {
-      console.log('📁 Using shared folder:', sharedId)
-      // 共有フォルダが存在するかチェック
-      try {
-        await this.apiCall(`files/${sharedId}`)
-        return sharedId
-      } catch (error) {
-        console.warn('📁 Shared folder not accessible, falling back to personal folder')
-        this.setSharedFolderId(null) // 無効な共有フォルダIDをクリア
-      }
-    }
-    
-    // 個人フォルダの検索・作成
+    // 既存フォルダの検索
     const searchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
     const searchResult = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}`)
 
     if (searchResult.files && searchResult.files.length > 0) {
-      console.log('📁 Personal app folder found:', searchResult.files[0].id)
+      console.log('📁 App folder found:', searchResult.files[0].id)
       return searchResult.files[0].id
     }
 
     // フォルダが存在しない場合は作成
-    console.log('📁 Creating new personal app folder')
+    console.log('📁 Creating new app folder')
     const createResult = await this.apiCall('files', {
       method: 'POST',
       body: JSON.stringify({
@@ -294,51 +260,44 @@ class GoogleDriveService {
       })
     })
 
-    console.log('📁 Personal app folder created:', createResult.id)
+    console.log('📁 App folder created:', createResult.id)
     return createResult.id
   }
 
-  // バックアップファイルの保存（共同編集対応）
-  async saveBackup(backupData: BackupData, useSharedName: boolean = false): Promise<string> {
-    console.log('💾 Saving backup to Google Drive')
+  // バックアップファイルの保存（常に共同編集モード）
+  async saveBackup(backupData: BackupData): Promise<string> {
+    console.log('💾 Saving backup to Google Drive (collaborative mode)')
     
     const folderId = await this.getOrCreateAppFolder()
     
-    // 共同編集用の固定ファイル名または個人用のタイムスタンプファイル名
-    const baseFileName = useSharedName || this.getSharedFolderId() 
-      ? 'shared_schedule_data.json'  // 共有時は固定名
-      : `${GOOGLE_DRIVE_CONFIG.BACKUP_FILE_PREFIX}${new Date().toISOString().split('T')[0]}_${Date.now()}.json`
+    // 常に共同編集用の固定ファイル名を使用
+    const fileName = 'shared_schedule_data.json'
 
-    let fileName = baseFileName
-
-    // 共有フォルダの場合、既存ファイルを更新
-    if (useSharedName || this.getSharedFolderId()) {
-      // 既存の共有ファイルを検索
-      const searchQuery = `name='${baseFileName}' and '${folderId}' in parents and trashed=false`
-      const existingFiles = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}`)
+    // 既存の共有ファイルを検索
+    const searchQuery = `name='${fileName}' and '${folderId}' in parents and trashed=false`
+    const existingFiles = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}`)
+    
+    if (existingFiles.files && existingFiles.files.length > 0) {
+      // 既存ファイルを更新
+      const fileId = existingFiles.files[0].id
+      console.log('📝 Updating existing shared file:', fileId)
       
-      if (existingFiles.files && existingFiles.files.length > 0) {
-        // 既存ファイルを更新
-        const fileId = existingFiles.files[0].id
-        console.log('📝 Updating existing shared file:', fileId)
-        
-        const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(backupData, null, 2)
-        })
+      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(backupData, null, 2)
+      })
 
-        if (!response.ok) {
-          throw new Error('共有ファイルの更新に失敗しました')
-        }
-
-        const result = await response.json()
-        console.log('✅ Shared backup updated:', fileName)
-        return result.id
+      if (!response.ok) {
+        throw new Error('共有ファイルの更新に失敗しました')
       }
+
+      const result = await response.json()
+      console.log('✅ Shared backup updated:', fileName)
+      return result.id
     }
 
     // 新規ファイル作成
