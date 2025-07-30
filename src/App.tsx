@@ -23,6 +23,7 @@ import {
 import { checkAndCreateAutoBackup } from './utils/autoBackup'
 import { setupPrintColorSupport } from './utils/printHelpers'
 import { useAutoSaveToGoogleDrive } from './hooks/useAutoSaveToGoogleDrive'
+import { useAuth } from './hooks/useAuth'
 import { LABELS } from './constants/labels'
 import { initializeTranslationPrevention } from './utils/translationPrevention'
 
@@ -37,6 +38,9 @@ interface PrintOptions {
 }
 
 function App() {
+  // 認証関連
+  const { isAuthenticated, isLoading } = useAuth()
+  
   const [schedules, setSchedules] = useState<WorkSchedule[]>([])
   const [persons, setPersons] = useState<Person[]>([])
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
@@ -54,7 +58,7 @@ function App() {
   const [editingNurseOnCall, setEditingNurseOnCall] = useState<NurseOnCall | null>(null)
   const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(false)
 
-  // Google Drive自動保存フック
+  // Google Drive自動保存フック（認証後のみ有効）
   const { isSaving, saveStatus, manualSave } = useAutoSaveToGoogleDrive({
     schedules,
     persons,
@@ -62,7 +66,7 @@ function App() {
     oneTimeWork,
     onCalls,
     nurseOnCalls,
-    autoSaveEnabled
+    autoSaveEnabled: autoSaveEnabled && isAuthenticated
   })
 
   // サイドバーリスト表示用：過去の単発勤務を削除する関数
@@ -89,6 +93,21 @@ function App() {
     // 翻訳防止機能を初期化
     initializeTranslationPrevention()
     
+    // カラー印刷サポートを設定
+    setupPrintColorSupport()
+  }, [])
+
+  // 未認証時はデータ管理モーダルを強制表示
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && activeModal !== 'backup') {
+      setActiveModal('backup')
+    }
+  }, [isAuthenticated, isLoading, activeModal])
+
+  // 認証後にデータを読み込み
+  useEffect(() => {
+    if (!isAuthenticated) return
+    
     const savedSchedules = loadSchedules()
     const savedPersons = loadPersons()
     const savedLeaveRequests = loadLeaveRequests()
@@ -104,45 +123,45 @@ function App() {
     setOnCalls(savedOnCalls)
     setNurseOnCalls(savedNurseOnCalls)
     
-    // カラー印刷サポートを設定
-    setupPrintColorSupport()
+    console.log('認証後にデータを読み込みました（過去データもカレンダーには表示されます）')
+  }, [isAuthenticated])
+
+  // 認証後のみデータを保存
+  useEffect(() => {
+    if (isAuthenticated) saveSchedules(schedules)
+  }, [schedules, isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated) savePersons(persons)
+  }, [persons, isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated) saveLeaveRequests(leaveRequests)
+  }, [leaveRequests, isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated) saveOneTimeWork(oneTimeWork)
+  }, [oneTimeWork, isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated) saveOnCalls(onCalls)
+  }, [onCalls, isAuthenticated])
+
+  useEffect(() => {
+    if (isAuthenticated) saveNurseOnCalls(nurseOnCalls)
+  }, [nurseOnCalls, isAuthenticated])
+
+  // 自動バックアップ実行（認証後かつデータ変更時）
+  useEffect(() => {
+    if (!isAuthenticated) return
     
-    console.log('データを読み込みました（過去データもカレンダーには表示されます）')
-  }, [])
-
-  useEffect(() => {
-    saveSchedules(schedules)
-  }, [schedules])
-
-  useEffect(() => {
-    savePersons(persons)
-  }, [persons])
-
-  useEffect(() => {
-    saveLeaveRequests(leaveRequests)
-  }, [leaveRequests])
-
-  useEffect(() => {
-    saveOneTimeWork(oneTimeWork)
-  }, [oneTimeWork])
-
-  useEffect(() => {
-    saveOnCalls(onCalls)
-  }, [onCalls])
-
-  useEffect(() => {
-    saveNurseOnCalls(nurseOnCalls)
-  }, [nurseOnCalls])
-
-  // 自動バックアップ実行（データ変更時）
-  useEffect(() => {
     // 初期ロード時は実行しない（データが空の場合は除外）
     if (schedules.length > 0 || persons.length > 0 || leaveRequests.length > 0 || 
         oneTimeWork.length > 0 || onCalls.length > 0 || nurseOnCalls.length > 0) {
       const timer = setTimeout(performAutoBackup, 5000) // 5秒後に実行
       return () => clearTimeout(timer)
     }
-  }, [schedules, persons, leaveRequests, oneTimeWork, onCalls, nurseOnCalls])
+  }, [schedules, persons, leaveRequests, oneTimeWork, onCalls, nurseOnCalls, isAuthenticated])
 
   const addPerson = (person: Person) => {
     setPersons(prev => [...prev, person])
@@ -261,6 +280,11 @@ function App() {
   }
 
   const closeModal = () => {
+    // 未認証時はデータ管理モーダルを閉じられない
+    if (!isAuthenticated && activeModal === 'backup') {
+      return
+    }
+    
     setActiveModal(null)
     setEditingOnCall(null) // 編集状態をクリア
     setEditingNurseOnCall(null) // 編集状態をクリア
@@ -333,6 +357,18 @@ function App() {
     }, 100)
   }
 
+  // ローディング中の表示
+  if (isLoading) {
+    return (
+      <div className="app loading-screen">
+        <div className="loading-container">
+          <div className="loading-spinner-large"></div>
+          <p>システムを初期化しています...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       <header>
@@ -340,34 +376,39 @@ function App() {
           <h1>{LABELS.APP_NAME}</h1>
           <div className="header-buttons">
             <button 
-              className="add-button person-add"
-              onClick={() => setActiveModal('person')}
+              className={`add-button person-add ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setActiveModal('person')}
+              disabled={!isAuthenticated}
             >
               {LABELS.MENU.ADD_DOCTOR}
             </button>
             <button 
-              className="add-button leave-add"
-              onClick={() => setActiveModal('leave')}
+              className={`add-button leave-add ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setActiveModal('leave')}
+              disabled={!isAuthenticated}
             >
               {LABELS.MENU.ADD_LEAVE_REQUEST}
             </button>
             <button 
-              className="add-button onetime-add"
-              onClick={() => setActiveModal('onetime')}
+              className={`add-button onetime-add ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setActiveModal('onetime')}
+              disabled={!isAuthenticated}
             >
               {LABELS.MENU.ADD_ONETIME_WORK}
             </button>
             <button 
-              className="add-button oncall-add no-translate"
-              onClick={() => setActiveModal('oncall')}
+              className={`add-button oncall-add no-translate ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setActiveModal('oncall')}
               translate="no"
+              disabled={!isAuthenticated}
             >
               <span className="notranslate">{LABELS.MENU.ADD_ONCALL}</span>
             </button>
             <button 
-              className="add-button nurse-oncall-add no-translate"
-              onClick={() => setActiveModal('nurse-oncall')}
+              className={`add-button nurse-oncall-add no-translate ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setActiveModal('nurse-oncall')}
               translate="no"
+              disabled={!isAuthenticated}
             >
               <span className="notranslate">{LABELS.MENU.ADD_NURSE_ONCALL}</span>
             </button>
@@ -375,11 +416,12 @@ function App() {
               className="add-button backup-add"
               onClick={() => setActiveModal('backup')}
             >
-              {LABELS.MENU.DATA_MANAGEMENT}
+              {isAuthenticated ? LABELS.MENU.DATA_MANAGEMENT : '🔐 サインインが必要です'}
             </button>
             <button 
-              className="add-button print-add"
-              onClick={() => setActiveModal('print')}
+              className={`add-button print-add ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setActiveModal('print')}
+              disabled={!isAuthenticated}
             >
               {LABELS.MENU.PRINT}
             </button>
@@ -390,84 +432,92 @@ function App() {
         <div className="control-section">
           <div className="location-buttons">
             <button 
-              className={`location-button ${selectedLocation === 'minoo' ? 'active' : ''}`}
-              onClick={() => setSelectedLocation('minoo')}
+              className={`location-button ${selectedLocation === 'minoo' ? 'active' : ''} ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setSelectedLocation('minoo')}
               type="button"
+              disabled={!isAuthenticated}
             >
               本院箕面
             </button>
             <button 
-              className={`location-button ${selectedLocation === 'ibaraki' ? 'active' : ''}`}
-              onClick={() => setSelectedLocation('ibaraki')}
+              className={`location-button ${selectedLocation === 'ibaraki' ? 'active' : ''} ${!isAuthenticated ? 'disabled' : ''}`}
+              onClick={() => isAuthenticated && setSelectedLocation('ibaraki')}
               type="button"
+              disabled={!isAuthenticated}
             >
               分院茨木
             </button>
           </div>
           
           <div className="display-toggles">
-            <label className="toggle-label">
+            <label className={`toggle-label ${!isAuthenticated ? 'disabled' : ''}`}>
               <input
                 type="checkbox"
                 checked={showFullTime}
-                onChange={(e) => setShowFullTime(e.target.checked)}
+                onChange={(e) => isAuthenticated && setShowFullTime(e.target.checked)}
+                disabled={!isAuthenticated}
               />
               常勤
             </label>
-            <label className="toggle-label">
+            <label className={`toggle-label ${!isAuthenticated ? 'disabled' : ''}`}>
               <input
                 type="checkbox"
                 checked={showPartTime}
-                onChange={(e) => setShowPartTime(e.target.checked)}
+                onChange={(e) => isAuthenticated && setShowPartTime(e.target.checked)}
+                disabled={!isAuthenticated}
               />
               非常勤
             </label>
-            <label className="toggle-label">
+            <label className={`toggle-label ${!isAuthenticated ? 'disabled' : ''}`}>
               <input
                 type="checkbox"
                 checked={showOnCall}
-                onChange={(e) => setShowOnCall(e.target.checked)}
+                onChange={(e) => isAuthenticated && setShowOnCall(e.target.checked)}
+                disabled={!isAuthenticated}
               />
               オンコール
             </label>
-            <label className="toggle-label">
+            <label className={`toggle-label ${!isAuthenticated ? 'disabled' : ''}`}>
               <input
                 type="checkbox"
                 checked={showNurseOnCall}
-                onChange={(e) => setShowNurseOnCall(e.target.checked)}
+                onChange={(e) => isAuthenticated && setShowNurseOnCall(e.target.checked)}
+                disabled={!isAuthenticated}
               />
               看護師オンコール
             </label>
           </div>
           
-          {/* Google Drive自動保存 - 小さいボタンとして分離 */}
-          <div className="gdrive-save-section">
-            <button 
-              className={`gdrive-toggle-btn ${autoSaveEnabled ? 'active' : ''}`}
-              onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-              title="Google Drive自動保存のON/OFF"
-            >
-              💾 {autoSaveEnabled ? 'ON' : 'OFF'}
-            </button>
-            
-            {autoSaveEnabled && (
-              <>
-                <div className="gdrive-status-mini">
-                  {isSaving && <span className="saving-mini">保存中</span>}
-                  {saveStatus === 'success' && <span className="success-mini">✅</span>}
-                  {saveStatus === 'error' && <span className="error-mini">❌</span>}
-                </div>
-                <button 
-                  onClick={manualSave}
-                  disabled={isSaving}
-                  className="manual-save-btn-mini"
-                  title="手動保存"
-                >
-                  💾
-                </button>
-              </>
-            )}
-          </div>
+          {/* Google Drive自動保存 - 認証後のみ表示 */}
+          {isAuthenticated && (
+            <div className="gdrive-save-section">
+              <button 
+                className={`gdrive-toggle-btn ${autoSaveEnabled ? 'active' : ''}`}
+                onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
+                title="Google Drive自動保存のON/OFF"
+              >
+                💾 {autoSaveEnabled ? 'ON' : 'OFF'}
+              </button>
+              
+              {autoSaveEnabled && (
+                <>
+                  <div className="gdrive-status-mini">
+                    {isSaving && <span className="saving-mini">保存中</span>}
+                    {saveStatus === 'success' && <span className="success-mini">✅</span>}
+                    {saveStatus === 'error' && <span className="error-mini">❌</span>}
+                  </div>
+                  <button 
+                    onClick={manualSave}
+                    disabled={isSaving}
+                    className="manual-save-btn-mini"
+                    title="手動保存"
+                  >
+                    💾
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="content-grid">
