@@ -60,10 +60,17 @@ html, body {
   
   /* 印刷時に非表示にする要素 */
   .no-print,
+  header,
   .header-buttons,
   .control-section,
   .sidebar,
-  .nav-button {
+  .nav-button,
+  .auto-save-controls,
+  .gdrive-save-section,
+  .location-buttons,
+  .display-toggles,
+  .content-grid .sidebar,
+  main > .control-section {
     display: none !important;
   }
   
@@ -83,10 +90,33 @@ html, body {
     width: 100% !important;
     max-width: none !important;
     height: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-start !important;
+    display: block !important;
     page-break-inside: avoid !important;
+  }
+  
+  /* 印刷時はカレンダーのみ表示 */
+  .app > * {
+    display: none !important;
+  }
+  
+  .app main {
+    display: block !important;
+  }
+  
+  .app main > * {
+    display: none !important;
+  }
+  
+  .app main .content-grid {
+    display: block !important;
+  }
+  
+  .app main .content-grid > * {
+    display: none !important;
+  }
+  
+  .app main .content-grid .calendar-section {
+    display: block !important;
   }
   
   #root {
@@ -131,12 +161,15 @@ html, body {
     flex: 1 !important;
     height: auto !important;
     overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
   
   .content-grid {
     display: block !important;
     width: 100% !important;
     height: auto !important;
+    flex: 1 !important;
   }
   
   .calendar-section {
