@@ -78,8 +78,7 @@ html, body {
     box-shadow: none !important;
   }
   
-  /* 印刷時に非表示にする要素 - より包括的に */
-  .no-print,
+  /* 印刷時に非表示にする要素 */
   header,
   .header-content,
   .header-buttons,
@@ -91,20 +90,8 @@ html, body {
   .location-buttons,
   .display-toggles,
   .content-grid .sidebar,
-  main > .control-section,
-  .app > header,
-  .app header,
-  body > *:not(.app),
-  #root > *:not(.app),
-  .app > *:not(main) {
+  main > .control-section {
     display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    height: 0 !important;
-    width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
   }
   
   /* 基本レイアウト - 全体の高さを制御 */
@@ -143,42 +130,29 @@ html, body {
     background-image: none !important;
   }
   
-  /* 印刷時はカレンダー以外の要素を非表示 */
-  .app > *:not(main) {
+  /* シンプルで確実な階層制御 */
+  .app > header {
     display: none !important;
-    visibility: hidden !important;
   }
   
-  .app main > *:not(.content-grid) {
+  .content-grid .sidebar {
     display: none !important;
-    visibility: hidden !important;
   }
   
-  .content-grid > *:not(.calendar-section) {
-    display: none !important;
-    visibility: hidden !important;
+  /* カレンダー表示の確保 */
+  .calendar-section {
+    display: block !important;
+    width: 100% !important;
   }
   
-  /* カレンダー関連要素は表示を維持 */
-  .calendar-section,
-  .calendar-section *,
-  .calendar,
-  .calendar *,
-  .calendar-header,
-  .calendar-header *,
-  .calendar-grid,
-  .calendar-grid *,
-  .weekday-header,
-  .weekday-header *,
-  .calendar-days,
-  .calendar-days *,
-  .calendar-day,
-  .calendar-day * {
-    display: revert !important;
-    visibility: visible !important;
+  .calendar {
+    display: block !important;
   }
   
-  /* 必要な display プロパティを明示的に設定 */
+  .calendar-grid {
+    display: block !important;
+  }
+  
   .weekday-header {
     display: grid !important;
   }
@@ -188,11 +162,6 @@ html, body {
   }
   
   .calendar-day {
-    display: flex !important;
-  }
-  
-  .person-info-compact,
-  .onetime-info-compact {
     display: flex !important;
   }
   
@@ -206,33 +175,13 @@ html, body {
     background-image: none !important;
   }
   
-  /* ヘッダー調整 - カラー対応 */
+  /* ヘッダーを完全に非表示 */
   header {
-    background: linear-gradient(135deg, #2c3e50, #3498db) !important;
-    color: white !important;
-    padding: 0.2rem 0 !important;
-    margin: 0 0 0.2rem 0 !important;
-    border-radius: 0 !important;
-    border-bottom: 2px solid #2c3e50 !important;
-    height: auto !important;
-    flex-shrink: 0 !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-  }
-  
-  .header-content {
-    justify-content: center !important;
-    padding: 0.15rem 0 !important;
-    height: auto !important;
-  }
-  
-  header h1 {
-    font-size: 1rem !important;
-    text-align: center !important;
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
     margin: 0 !important;
-    font-weight: bold !important;
-    line-height: 1.2 !important;
-    color: white !important;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3) !important;
+    padding: 0 !important;
   }
   
   main {
