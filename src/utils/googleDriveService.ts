@@ -40,7 +40,6 @@ class GoogleDriveService {
   private accessToken: string | null = null
   private tokenClient: TokenClient | null = null
   private isInitialized = false
-  private sharedFolderId: string | null = null
 
   // 初期化
   async initialize(): Promise<void> {
