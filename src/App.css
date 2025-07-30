@@ -1994,24 +1994,33 @@ select:focus {
 .person-work-item {
   background: rgba(255, 255, 255, 0.8);
   border-left: 3px solid #3498db;
-  padding: 0.2rem 0.3rem;
-  margin-bottom: 0.1rem;
+  padding: 0.15rem 0.25rem; /* より小さく */
+  margin-bottom: 0.05rem; /* 間隔を詰める */
   border-radius: 2px;
   font-size: 0.6rem;
 }
 
-.person-work-item .person-name {
-  font-weight: 900; /* より太く */
-  color: #1a252f; /* より濃く */
-  font-size: 0.65rem; /* 少し大きく */
-  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* 影でくっきり */
-  margin-bottom: 0.1rem;
+/* コンパクト表示: 名前と時間を横並び */
+.person-info-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  line-height: 1.1;
 }
 
-.person-work-item .person-time {
-  color: #2c3e50; /* より濃く */
-  font-size: 0.55rem; /* 少し大きく */
-  font-weight: 600; /* 少し太く */
+.person-info-compact .person-name {
+  font-weight: 900; /* より太く */
+  color: #1a252f; /* より濃く */
+  font-size: 0.6rem; /* コンパクト化 */
+  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* 影でくっきり */
+  flex-shrink: 0; /* 名前を省略しない */
+}
+
+.person-info-compact .person-time {
+  color: #555; /* 少し薄く */
+  font-size: 0.5rem; /* 小さく */
+  font-weight: 500; /* 軽く */
+  white-space: nowrap; /* 改行しない */
 }
 
 
@@ -3087,8 +3096,8 @@ select:focus {
 .calendar-day .onetime-work-item {
   background: rgba(155, 89, 182, 0.1);
   border-left: 3px solid #9b59b6;
-  padding: 0.2rem 0.3rem;
-  margin-bottom: 0.1rem;
+  padding: 0.15rem 0.25rem; /* より小さく */
+  margin-bottom: 0.05rem; /* 間隔を詰める */
   border-radius: 2px;
   font-size: 0.6rem;
 }
@@ -3110,19 +3119,28 @@ select:focus {
   50% { opacity: 0.7; }
 }
 
-.calendar-day .onetime-name {
-  font-weight: 900; /* より太く */
-  color: #6c3483; /* より濃く */
-  font-size: 0.65rem; /* 少し大きく */
-  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* 影でくっきり */
+/* 単発勤務コンパクト表示 */
+.onetime-info-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  line-height: 1.1;
   margin-bottom: 0.1rem;
 }
 
-.calendar-day .onetime-time {
-  color: #2c3e50; /* より濃く */
-  font-size: 0.55rem; /* 少し大きく */
-  font-weight: 600; /* 少し太く */
-  margin-bottom: 0.1rem;
+.onetime-info-compact .onetime-name {
+  font-weight: 900; /* より太く */
+  color: #6c3483; /* より濃く */
+  font-size: 0.6rem; /* コンパクト化 */
+  text-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.3); /* 影でくっきり */
+  flex-shrink: 0; /* 名前を省略しない */
+}
+
+.onetime-info-compact .onetime-time {
+  color: #555; /* 少し薄く */
+  font-size: 0.5rem; /* 小さく */
+  font-weight: 500; /* 軽く */
+  white-space: nowrap; /* 改行しない */
 }
 
 .calendar-day .onetime-desc {

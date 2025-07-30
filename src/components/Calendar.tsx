@@ -207,9 +207,11 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
                   className={`person-work-item ${pwd.person.employmentType}`}
                   style={{ borderLeftColor: pwd.person.color }}
                 >
-                  <div className="person-name">{pwd.person.name}</div>
-                  <div className="person-time">
-                    {pwd.person.startTime} - {pwd.person.endTime}
+                  <div className="person-info-compact">
+                    <span className="person-name">{pwd.person.name}</span>
+                    <span className="person-time">
+                      {pwd.person.startTime}-{pwd.person.endTime}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -224,11 +226,13 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
                   key={`onetime-${work.id}-${index}`} 
                   className={`onetime-work-item ${work.isRecruiting ? 'recruiting' : ''}`}
                 >
-                  <div className="onetime-name">
-                    {work.isRecruiting ? '募集中' : work.name}
-                  </div>
-                  <div className="onetime-time">
-                    {work.startTime} - {work.endTime}
+                  <div className="onetime-info-compact">
+                    <span className="onetime-name">
+                      {work.isRecruiting ? '募集中' : work.name}
+                    </span>
+                    <span className="onetime-time">
+                      {work.startTime}-{work.endTime}
+                    </span>
                   </div>
                   {work.description && (
                     <div className="onetime-desc">{work.description}</div>
