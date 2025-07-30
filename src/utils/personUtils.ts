@@ -1,4 +1,4 @@
-import { addDays, isSameDay, isBefore, getWeek, startOfMonth, endOfMonth } from 'date-fns'
+import { addDays, isSameDay, isBefore, getWeek, startOfMonth } from 'date-fns'
 import type { Person, PersonWorkDay, WorkPattern } from '../types'
 
 const getWeekOfMonth = (date: Date): number => {
@@ -9,11 +9,11 @@ const getWeekOfMonth = (date: Date): number => {
   return weekOfYear - weekOfYearForStartOfMonth + 1
 }
 
-// 第5週目かどうかを判定する関数
-const isFifthWeek = (date: Date): boolean => {
-  const weekOfMonth = getWeekOfMonth(date)
-  return weekOfMonth >= 5
-}
+// 第5週目かどうかを判定する関数（レガシー関数 - 現在は未使用）
+// const isFifthWeek = (date: Date): boolean => {
+//   const weekOfMonth = getWeekOfMonth(date)
+//   return weekOfMonth >= 5
+// }
 
 // その月でその曜日が何回目の出現かを計算する関数
 const getDayOfWeekOccurrenceInMonth = (date: Date): number => {

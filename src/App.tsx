@@ -43,7 +43,7 @@ function App() {
   const { isAuthenticated, isLoading } = useAuth()
   
   // 過去月ロック機能
-  const { checkPastMonthEdit, checkPastMonthEditForDates } = usePastMonthLock()
+  const { checkPastMonthEdit } = usePastMonthLock()
   
   const [schedules, setSchedules] = useState<WorkSchedule[]>([])
   const [persons, setPersons] = useState<Person[]>([])
@@ -182,14 +182,7 @@ function App() {
 
   const addLeaveRequest = (request: LeaveRequest) => {
     // 過去月の編集をチェック
-    const dates = []
-    let currentDate = new Date(request.startDate)
-    while (currentDate <= request.endDate) {
-      dates.push(new Date(currentDate))
-      currentDate.setDate(currentDate.getDate() + 1)
-    }
-    
-    if (!checkPastMonthEditForDates(dates)) {
+    if (!checkPastMonthEdit(request.date)) {
       return
     }
     
@@ -200,18 +193,8 @@ function App() {
   const removeLeaveRequest = (id: string) => {
     try {
       const request = leaveRequests.find(req => req.id === id)
-      if (request) {
-        // 過去月の編集をチェック
-        const dates = []
-        let currentDate = new Date(request.startDate)
-        while (currentDate <= request.endDate) {
-          dates.push(new Date(currentDate))
-          currentDate.setDate(currentDate.getDate() + 1)
-        }
-        
-        if (!checkPastMonthEditForDates(dates)) {
-          return
-        }
+      if (request && !checkPastMonthEdit(request.date)) {
+        return
       }
       
       setLeaveRequests(prev => prev.filter(request => request.id !== id))
