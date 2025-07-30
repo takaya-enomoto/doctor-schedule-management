@@ -49,6 +49,11 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
   const [backupFiles, setBackupFiles] = useState<DriveFile[]>([])
   const [showFileList, setShowFileList] = useState(false)
   const [showSharedFolderSetup, setShowSharedFolderSetup] = useState(false)
+  const [folderStatus, setFolderStatus] = useState<{
+    hasSharedFolder: boolean
+    hasOwnedFolder: boolean
+    folderType: 'shared' | 'owned' | 'none'
+  }>({ hasSharedFolder: false, hasOwnedFolder: false, folderType: 'none' })
 
   // Google API状態の監視
   useEffect(() => {
@@ -61,6 +66,24 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
 
     return () => clearInterval(interval)
   }, [])
+
+  // フォルダ状況の監視（サインイン後）
+  useEffect(() => {
+    const updateFolderStatus = async () => {
+      if (apiState.isSignedIn) {
+        try {
+          const status = await googleDriveService.getFolderStatus()
+          setFolderStatus(status)
+        } catch (error) {
+          console.error('フォルダ状況の取得に失敗:', error)
+        }
+      } else {
+        setFolderStatus({ hasSharedFolder: false, hasOwnedFolder: false, folderType: 'none' })
+      }
+    }
+
+    updateFolderStatus()
+  }, [apiState.isSignedIn])
 
   // Google Drive初期化
   const handleInitialize = async () => {
@@ -90,6 +113,10 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
       await googleDriveService.signIn()
       setMessage({ type: 'success', text: 'Google Driveにサインインしました' })
       setApiState(googleDriveService.getState())
+      
+      // フォルダ状況を取得
+      const status = await googleDriveService.getFolderStatus()
+      setFolderStatus(status)
     } catch (error) {
       setMessage({ 
         type: 'error', 
@@ -132,6 +159,10 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
       await googleDriveService.saveBackup(backupData)
       
       setMessage({ type: 'success', text: '共有スケジュールデータを保存しました' })
+      
+      // フォルダ状況を更新
+      const status = await googleDriveService.getFolderStatus()
+      setFolderStatus(status)
       
       // ファイル一覧を更新
       if (showFileList) {
@@ -287,6 +318,28 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
                   <span className="shared-icon">👥</span>
                   <strong>共同編集モード</strong>
                   <span className="shared-mode-desc">チーム全員で同じデータを共有</span>
+                </div>
+                
+                {/* フォルダ検出状況の表示 */}
+                <div className="folder-detection-status">
+                  {folderStatus.folderType === 'shared' && (
+                    <div className="status-item shared-detected">
+                      <span className="status-icon">✅</span>
+                      <span>共有フォルダを検出・使用中</span>
+                    </div>
+                  )}
+                  {folderStatus.folderType === 'owned' && (
+                    <div className="status-item owned-detected">
+                      <span className="status-icon">📁</span>
+                      <span>個人フォルダを使用中（共有設定を推奨）</span>
+                    </div>
+                  )}
+                  {folderStatus.folderType === 'none' && apiState.isSignedIn && (
+                    <div className="status-item none-detected">
+                      <span className="status-icon">➕</span>
+                      <span>初回保存時にフォルダを作成します</span>
+                    </div>
+                  )}
                 </div>
               </div>
               

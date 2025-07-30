@@ -4056,6 +4056,36 @@ button:disabled {
   margin-left: 0.5rem;
 }
 
+/* フォルダ検出状況の表示 */
+.folder-detection-status {
+  margin-top: 0.5rem;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-family: 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo UI', sans-serif;
+  padding: 0.25rem 0;
+}
+
+.status-item.shared-detected {
+  color: #28a745;
+}
+
+.status-item.owned-detected {
+  color: #fd7e14;
+}
+
+.status-item.none-detected {
+  color: #6c757d;
+}
+
+.status-icon {
+  font-size: 1rem;
+}
+
 .shared-folder-setup {
   background: linear-gradient(135deg, #e8f5e8, #d4f4d4);
   border: 2px solid #28a745;
