@@ -16,7 +16,10 @@ export const GOOGLE_DRIVE_CONFIG = {
   ],
   
   // アプリケーション用フォルダ名
-  APP_FOLDER_NAME: '医師出勤管理_データ',
+  APP_FOLDER_NAME: '医師スケジュール管理システム',
+  
+  // 固定フォルダID（設定されている場合は自動検出をスキップ）
+  FIXED_FOLDER_ID: import.meta.env.VITE_SHARED_FOLDER_ID || '',
   
   // バックアップファイル名のプレフィックス
   BACKUP_FILE_PREFIX: '医師出勤管理_バックアップ_'

@@ -236,9 +236,24 @@ class GoogleDriveService {
     return response.json()
   }
 
-  // 共有フォルダを自動検出・優先使用
+  // 共有フォルダを自動検出・優先使用（または固定フォルダIDを使用）
   async getOrCreateAppFolder(): Promise<string> {
-    console.log('📁 Getting or creating app folder (auto-detect shared folder)')
+    console.log('📁 Getting or creating app folder')
+    
+    // 0. 固定フォルダIDが設定されている場合は最優先で使用
+    if (GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID) {
+      console.log('🎯 Using fixed folder ID:', GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID)
+      try {
+        // フォルダの存在確認
+        await this.apiCall(`files/${GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID}`)
+        console.log('✅ Fixed folder verified and accessible')
+        return GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID
+      } catch (error) {
+        console.warn('⚠️ Fixed folder ID is not accessible, falling back to auto-detection:', error)
+      }
+    }
+    
+    console.log('🔍 Auto-detecting shared folder...')
     console.log('🔍 Searching for folder name:', GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME)
     
     // 1. 共有されたフォルダを優先検索
@@ -465,13 +480,23 @@ class GoogleDriveService {
   async getFolderStatus(): Promise<{
     hasSharedFolder: boolean
     hasOwnedFolder: boolean
-    folderType: 'shared' | 'owned' | 'none'
+    folderType: 'shared' | 'owned' | 'fixed' | 'none'
   }> {
     if (!this.isSignedIn()) {
       return { hasSharedFolder: false, hasOwnedFolder: false, folderType: 'none' }
     }
 
     try {
+      // 固定フォルダIDが設定されている場合
+      if (GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID) {
+        try {
+          await this.apiCall(`files/${GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID}`)
+          return { hasSharedFolder: true, hasOwnedFolder: false, folderType: 'fixed' }
+        } catch (error) {
+          console.warn('Fixed folder ID is not accessible')
+        }
+      }
+      
       const sharedFolderId = await this.findSharedAppFolder()
       const ownedFolderId = await this.findOwnedAppFolder()
       

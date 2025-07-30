@@ -4070,6 +4070,11 @@ button:disabled {
   padding: 0.25rem 0;
 }
 
+.status-item.fixed-detected {
+  color: #007bff;
+  font-weight: 600;
+}
+
 .status-item.shared-detected {
   color: #28a745;
 }

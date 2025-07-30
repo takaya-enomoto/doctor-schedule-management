@@ -52,7 +52,7 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
   const [folderStatus, setFolderStatus] = useState<{
     hasSharedFolder: boolean
     hasOwnedFolder: boolean
-    folderType: 'shared' | 'owned' | 'none'
+    folderType: 'shared' | 'owned' | 'fixed' | 'none'
   }>({ hasSharedFolder: false, hasOwnedFolder: false, folderType: 'none' })
 
   // Google API状態の監視
@@ -322,6 +322,12 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
                 
                 {/* フォルダ検出状況の表示 */}
                 <div className="folder-detection-status">
+                  {folderStatus.folderType === 'fixed' && (
+                    <div className="status-item fixed-detected">
+                      <span className="status-icon">🎯</span>
+                      <span>固定フォルダを使用中（管理者設定済み）</span>
+                    </div>
+                  )}
                   {folderStatus.folderType === 'shared' && (
                     <div className="status-item shared-detected">
                       <span className="status-icon">✅</span>
