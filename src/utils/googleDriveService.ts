@@ -239,23 +239,28 @@ class GoogleDriveService {
   // 共有フォルダを自動検出・優先使用
   async getOrCreateAppFolder(): Promise<string> {
     console.log('📁 Getting or creating app folder (auto-detect shared folder)')
+    console.log('🔍 Searching for folder name:', GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME)
     
     // 1. 共有されたフォルダを優先検索
+    console.log('🔍 Step 1: Searching for shared folders...')
     const sharedFolderId = await this.findSharedAppFolder()
     if (sharedFolderId) {
-      console.log('📁 Using shared app folder:', sharedFolderId)
+      console.log('✅ Using shared app folder:', sharedFolderId)
       return sharedFolderId
     }
+    console.log('❌ No shared folders found')
 
     // 2. 自分が所有するフォルダを検索
+    console.log('🔍 Step 2: Searching for owned non-shared folders...')
     const ownedFolderId = await this.findOwnedAppFolder()
     if (ownedFolderId) {
-      console.log('📁 Using owned app folder:', ownedFolderId)
+      console.log('⚠️ Using owned non-shared app folder:', ownedFolderId)
       return ownedFolderId
     }
+    console.log('❌ No owned non-shared folders found')
 
     // 3. フォルダが存在しない場合は作成
-    console.log('📁 Creating new app folder')
+    console.log('🔍 Step 3: Creating new app folder...')
     const createResult = await this.apiCall('files', {
       method: 'POST',
       body: JSON.stringify({
@@ -264,24 +269,42 @@ class GoogleDriveService {
       })
     })
 
-    console.log('📁 App folder created:', createResult.id)
+    console.log('✅ New app folder created:', createResult.id)
     return createResult.id
   }
 
   // 共有されたアプリフォルダを検索
   private async findSharedAppFolder(): Promise<string | null> {
     try {
-      // 自分と共有されているフォルダを検索
-      const searchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false and sharedWithMe=true`
-      const searchResult = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}`)
+      // まず他のユーザーから共有されたフォルダを検索
+      const sharedWithMeQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false and sharedWithMe=true`
+      const sharedResult = await this.apiCall(`files?q=${encodeURIComponent(sharedWithMeQuery)}`)
 
-      if (searchResult.files && searchResult.files.length > 0) {
-        // 複数ある場合は最新のものを使用
-        const sortedFiles = searchResult.files.sort((a: any, b: any) => 
+      if (sharedResult.files && sharedResult.files.length > 0) {
+        const sortedFiles = sharedResult.files.sort((a: any, b: any) => 
           new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
         )
-        console.log('📁 Shared app folder found:', sortedFiles[0].id)
+        console.log('📁 Shared app folder found (sharedWithMe):', sortedFiles[0].id)
         return sortedFiles[0].id
+      }
+
+      // 次に自分が所有しているが他のユーザーと共有しているフォルダを検索
+      const ownedButSharedQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'me' in owners`
+      const ownedResult = await this.apiCall(`files?q=${encodeURIComponent(ownedButSharedQuery)}&fields=files(id,name,shared,permissions,modifiedTime)`)
+
+      if (ownedResult.files && ownedResult.files.length > 0) {
+        // 共有されているフォルダを優先
+        const sharedFolders = ownedResult.files.filter((file: any) => 
+          file.shared === true || (file.permissions && file.permissions.length > 1)
+        )
+        
+        if (sharedFolders.length > 0) {
+          const sortedSharedFolders = sharedFolders.sort((a: any, b: any) => 
+            new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
+          )
+          console.log('📁 Shared app folder found (owned but shared):', sortedSharedFolders[0].id)
+          return sortedSharedFolders[0].id
+        }
       }
     } catch (error) {
       console.warn('📁 Error searching for shared folders:', error)
@@ -290,16 +313,23 @@ class GoogleDriveService {
     return null
   }
 
-  // 自分が所有するアプリフォルダを検索
+  // 自分が所有するアプリフォルダを検索（共有されていない個人用フォルダ）
   private async findOwnedAppFolder(): Promise<string | null> {
     try {
-      // 自分が所有するフォルダを検索
+      // 自分が所有する非共有フォルダを検索
       const searchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false and 'me' in owners`
-      const searchResult = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}`)
+      const searchResult = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}&fields=files(id,name,shared,permissions,modifiedTime)`)
 
       if (searchResult.files && searchResult.files.length > 0) {
-        console.log('📁 Owned app folder found:', searchResult.files[0].id)
-        return searchResult.files[0].id
+        // 共有されていないフォルダのみを対象
+        const nonSharedFolders = searchResult.files.filter((file: any) => 
+          file.shared !== true && (!file.permissions || file.permissions.length <= 1)
+        )
+        
+        if (nonSharedFolders.length > 0) {
+          console.log('📁 Owned non-shared app folder found:', nonSharedFolders[0].id)
+          return nonSharedFolders[0].id
+        }
       }
     } catch (error) {
       console.warn('📁 Error searching for owned folders:', error)
