@@ -279,7 +279,21 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
         
         {apiState.user && (
           <div className="user-info">
-            <img src={apiState.user.imageUrl} alt="アバター" className="user-avatar" />
+            {apiState.user.imageUrl ? (
+              <img 
+                src={apiState.user.imageUrl} 
+                alt="アバター" 
+                className="user-avatar"
+                onError={(e) => {
+                  // 画像読み込みエラー時はデフォルトアイコンを表示
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                }}
+              />
+            ) : null}
+            <div className={`user-avatar-fallback ${apiState.user.imageUrl ? 'hidden' : ''}`}>
+              👤
+            </div>
             <div>
               <div><strong>{apiState.user.name}</strong></div>
               <div className="user-email">{apiState.user.email}</div>

@@ -2406,6 +2406,23 @@ select:focus {
   border: 1px solid #ccc;
 }
 
+.user-avatar-fallback {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f0f0;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.user-avatar-fallback.hidden {
+  display: none;
+}
+
 .user-email {
   font-size: 0.8rem;
   color: #666;

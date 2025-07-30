@@ -41,6 +41,7 @@ class GoogleDriveService {
   private accessToken: string | null = null
   private tokenClient: TokenClient | null = null
   private isInitialized = false
+  private userInfo: { name: string; email: string; imageUrl: string } | null = null
 
   // 初期化
   async initialize(): Promise<void> {
@@ -185,7 +186,14 @@ class GoogleDriveService {
 
           this.accessToken = response.access_token
           console.log('✅ Successfully signed in to Google Drive')
-          resolve()
+          
+          // ユーザー情報を取得
+          this.fetchUserInfo().then(() => {
+            resolve()
+          }).catch((error) => {
+            console.warn('⚠️ Failed to fetch user info, but sign-in successful:', error)
+            resolve() // ユーザー情報取得に失敗してもサインインは成功とする
+          })
           
           // 元のコールバックに戻す
           this.tokenClient!.callback = originalCallback
@@ -201,6 +209,44 @@ class GoogleDriveService {
     })
   }
 
+  // ユーザー情報を取得
+  private async fetchUserInfo(): Promise<void> {
+    if (!this.accessToken) {
+      throw new Error('No access token available')
+    }
+
+    try {
+      console.log('👤 Fetching user information...')
+      
+      // Google Drive APIを使用してユーザー情報を取得
+      const response = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch user info: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('👤 User data received:', data)
+
+      if (data.user) {
+        this.userInfo = {
+          name: data.user.displayName || 'ユーザー',
+          email: data.user.emailAddress || '',
+          imageUrl: data.user.photoLink || ''
+        }
+        console.log('✅ User info updated:', this.userInfo)
+      }
+    } catch (error) {
+      console.error('❌ Error fetching user info:', error)
+      throw error
+    }
+  }
+
   // サインアウト
   signOut(): void {
     if (this.accessToken && window.google?.accounts?.oauth2) {
@@ -210,6 +256,7 @@ class GoogleDriveService {
       })
     }
     this.accessToken = null
+    this.userInfo = null // ユーザー情報もクリア
   }
 
   // サインイン状態の確認
@@ -613,10 +660,10 @@ class GoogleDriveService {
       isLoaded: !!window.google?.accounts?.oauth2,
       isSignedIn: this.isSignedIn(),
       isInitialized: this.isInitialized,
-      user: this.isSignedIn() ? {
-        name: 'ユーザー',
-        email: '',
-        imageUrl: ''
+      user: this.isSignedIn() && this.userInfo ? {
+        name: this.userInfo.name,
+        email: this.userInfo.email,
+        imageUrl: this.userInfo.imageUrl
       } : undefined
     }
   }
