@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { isBefore, startOfDay, format, addMonths } from 'date-fns'
+import { usePastMonthLock } from './hooks/usePastMonthLock'
 import './App.css'
 import Calendar from './components/Calendar'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -40,6 +41,9 @@ interface PrintOptions {
 function App() {
   // 認証関連
   const { isAuthenticated, isLoading } = useAuth()
+  
+  // 過去月ロック機能
+  const { checkPastMonthEdit, checkPastMonthEditForDates } = usePastMonthLock()
   
   const [schedules, setSchedules] = useState<WorkSchedule[]>([])
   const [persons, setPersons] = useState<Person[]>([])
@@ -177,12 +181,39 @@ function App() {
   }
 
   const addLeaveRequest = (request: LeaveRequest) => {
+    // 過去月の編集をチェック
+    const dates = []
+    let currentDate = new Date(request.startDate)
+    while (currentDate <= request.endDate) {
+      dates.push(new Date(currentDate))
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+    
+    if (!checkPastMonthEditForDates(dates)) {
+      return
+    }
+    
     setLeaveRequests(prev => [...prev, request])
     setActiveModal(null) // モーダルを閉じる
   }
 
   const removeLeaveRequest = (id: string) => {
     try {
+      const request = leaveRequests.find(req => req.id === id)
+      if (request) {
+        // 過去月の編集をチェック
+        const dates = []
+        let currentDate = new Date(request.startDate)
+        while (currentDate <= request.endDate) {
+          dates.push(new Date(currentDate))
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
+        
+        if (!checkPastMonthEditForDates(dates)) {
+          return
+        }
+      }
+      
       setLeaveRequests(prev => prev.filter(request => request.id !== id))
     } catch (error) {
       console.error('Error removing leave request:', error)
@@ -190,12 +221,22 @@ function App() {
   }
 
   const addOneTimeWork = (work: OneTimeWork) => {
+    // 過去月の編集をチェック
+    if (!checkPastMonthEdit(work.date)) {
+      return
+    }
+    
     setOneTimeWork(prev => [...prev, work])
     setActiveModal(null) // モーダルを閉じる
   }
 
   const removeOneTimeWork = (id: string) => {
     try {
+      const work = oneTimeWork.find(w => w.id === id)
+      if (work && !checkPastMonthEdit(work.date)) {
+        return
+      }
+      
       setOneTimeWork(prev => prev.filter(work => work.id !== id))
     } catch (error) {
       console.error('Error removing one-time work:', error)
@@ -203,6 +244,11 @@ function App() {
   }
 
   const addOnCall = (onCall: OnCall) => {
+    // 過去月の編集をチェック
+    if (!checkPastMonthEdit(onCall.date)) {
+      return
+    }
+    
     if (editingOnCall) {
       // 編集モード
       setOnCalls(prev => prev.map(existing => 
@@ -218,6 +264,11 @@ function App() {
 
   const removeOnCall = (id: string) => {
     try {
+      const onCall = onCalls.find(oc => oc.id === id)
+      if (onCall && !checkPastMonthEdit(onCall.date)) {
+        return
+      }
+      
       setOnCalls(prev => prev.filter(onCall => onCall.id !== id))
     } catch (error) {
       console.error('Error removing on-call:', error)
@@ -225,6 +276,11 @@ function App() {
   }
 
   const addNurseOnCall = (nurseOnCall: NurseOnCall) => {
+    // 過去月の編集をチェック
+    if (!checkPastMonthEdit(nurseOnCall.date)) {
+      return
+    }
+    
     if (editingNurseOnCall) {
       // 編集モード
       setNurseOnCalls(prev => prev.map(existing => 
@@ -240,6 +296,11 @@ function App() {
 
   const removeNurseOnCall = (id: string) => {
     try {
+      const nurseOnCall = nurseOnCalls.find(noc => noc.id === id)
+      if (nurseOnCall && !checkPastMonthEdit(nurseOnCall.date)) {
+        return
+      }
+      
       setNurseOnCalls(prev => prev.filter(nurseOnCall => nurseOnCall.id !== id))
     } catch (error) {
       console.error('Error removing nurse on-call:', error)

@@ -1,4 +1,4 @@
-import { addDays, isSameDay, isBefore, getWeek, startOfMonth } from 'date-fns'
+import { addDays, isSameDay, isBefore, getWeek, startOfMonth, endOfMonth } from 'date-fns'
 import type { Person, PersonWorkDay, WorkPattern } from '../types'
 
 const getWeekOfMonth = (date: Date): number => {
@@ -15,11 +15,33 @@ const isFifthWeek = (date: Date): boolean => {
   return weekOfMonth >= 5
 }
 
+// その月でその曜日が何回目の出現かを計算する関数
+const getDayOfWeekOccurrenceInMonth = (date: Date): number => {
+  const dayOfWeek = date.getDay()
+  const monthStart = startOfMonth(date)
+  let count = 0
+  let currentDate = new Date(monthStart)
+  
+  while (currentDate <= date) {
+    if (currentDate.getDay() === dayOfWeek) {
+      count++
+    }
+    currentDate = addDays(currentDate, 1)
+  }
+  
+  return count
+}
+
+// その月でその曜日が5回目の出現かどうかを判定する関数
+const isFifthOccurrenceOfDayOfWeek = (date: Date): boolean => {
+  return getDayOfWeekOccurrenceInMonth(date) === 5
+}
+
 
 const shouldWorkOnWeek = (date: Date, workPattern: WorkPattern, employmentType: 'full-time' | 'part-time'): boolean => {
   if (workPattern === 'all-weeks') {
-    // 非常勤の場合は第5週を除外
-    if (employmentType === 'part-time' && isFifthWeek(date)) {
+    // 非常勤の場合は月の5回目の同一曜日のみ除外
+    if (employmentType === 'part-time' && isFifthOccurrenceOfDayOfWeek(date)) {
       return false
     }
     return true
@@ -27,8 +49,8 @@ const shouldWorkOnWeek = (date: Date, workPattern: WorkPattern, employmentType: 
   
   const weekOfMonth = getWeekOfMonth(date)
   
-  // 非常勤の場合は第5週を明示的に除外
-  if (employmentType === 'part-time' && weekOfMonth >= 5) {
+  // 非常勤の場合は月の5回目の同一曜日のみ除外
+  if (employmentType === 'part-time' && isFifthOccurrenceOfDayOfWeek(date)) {
     return false
   }
   
@@ -48,7 +70,7 @@ export const generatePersonWorkDays = (person: Person, startDate: Date, endDate:
   while (isBefore(currentDate, endDate) || isSameDay(currentDate, endDate)) {
     const dayOfWeek = currentDate.getDay()
     
-    // 非常勤の場合は第5週を除外して判定
+    // 非常勤の場合は月の5回目の同一曜日のみ除外して判定
     if (person.workDays.includes(dayOfWeek) && shouldWorkOnWeek(currentDate, person.workPattern, person.employmentType)) {
       workDays.push({
         date: new Date(currentDate),

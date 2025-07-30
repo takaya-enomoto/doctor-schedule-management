@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from 'react'
+import { usePastMonthLock } from '../hooks/usePastMonthLock'
 import { 
   format, 
   startOfMonth, 
@@ -36,6 +37,9 @@ interface CalendarProps {
 const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, oneTimeWork, onCalls, nurseOnCalls, selectedLocation, showOnCall, showNurseOnCall, showFullTime, showPartTime, currentDate, setCurrentDate, onRemoveOnCall, onRemoveNurseOnCall }) => {
   // 強制再レンダリング用のstate
   const [renderKey, setRenderKey] = useState(0)
+  
+  // 過去月ロック機能
+  const { checkPastMonthEdit, isPastMonthDate } = usePastMonthLock()
   
   // selectedLocation、currentDate、表示設定が変更されたときに強制再レンダリング
   useEffect(() => {
@@ -252,8 +256,13 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
                 >
                   <button
                     className="delete-oncall-btn"
-                    onClick={() => onRemoveOnCall(onCall.id)}
+                    onClick={() => {
+                      if (checkPastMonthEdit(onCall.date)) {
+                        onRemoveOnCall(onCall.id)
+                      }
+                    }}
                     title="オンコールを削除"
+                    disabled={isPastMonthDate(onCall.date)}
                   >
                     ×
                   </button>
@@ -282,8 +291,13 @@ const Calendar: React.FC<CalendarProps> = ({ schedules, persons, leaveRequests, 
                 >
                   <button
                     className="delete-nurse-oncall-btn"
-                    onClick={() => onRemoveNurseOnCall(nurseOnCall.id)}
+                    onClick={() => {
+                      if (checkPastMonthEdit(nurseOnCall.date)) {
+                        onRemoveNurseOnCall(nurseOnCall.id)
+                      }
+                    }}
                     title="看護師オンコールを削除"
+                    disabled={isPastMonthDate(nurseOnCall.date)}
                   >
                     ×
                   </button>
