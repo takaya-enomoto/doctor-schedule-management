@@ -16,7 +16,7 @@ export const GOOGLE_DRIVE_CONFIG = {
   ],
   
   // アプリケーション用フォルダ名
-  APP_FOLDER_NAME: '医師スケジュール管理システム',
+  APP_FOLDER_NAME: '医師勤務管理データ',
   
   // 固定フォルダID（設定されている場合は自動検出をスキップ）
   FIXED_FOLDER_ID: import.meta.env.VITE_SHARED_FOLDER_ID || '',
