@@ -986,6 +986,141 @@ class GoogleDriveService {
       } : undefined
     }
   }
+
+  // アクセス権限の診断レポート生成
+  async generateAccessDiagnosticReport(): Promise<string> {
+    if (!this.isSignedIn()) {
+      return 'Not signed in to Google Drive'
+    }
+
+    const report = []
+    report.push('=== Google Drive Access Diagnostic Report ===')
+    report.push(`Current User: ${this.userInfo?.name} (${this.userInfo?.email})`)
+    report.push(`Timestamp: ${new Date().toISOString()}`)
+    report.push('')
+
+    try {
+      // 1. 共有ドライブの確認
+      report.push('1. Shared Drive Access:')
+      const sharedDriveId = await this.findTargetSharedDrive()
+      if (sharedDriveId) {
+        report.push('   ✅ Can access target shared drive')
+        report.push(`   Drive ID: ${sharedDriveId}`)
+      } else {
+        report.push('   ❌ Cannot access target shared drive')
+        report.push('   → User may not be a member of "みそらグループ 業務用 共有ドライブ"')
+      }
+      report.push('')
+
+      // 2. フォルダアクセスの確認
+      report.push('2. App Folder Access:')
+      if (GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID) {
+        try {
+          const response = await fetch(`https://www.googleapis.com/drive/v3/files/${GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID}?supportsAllDrives=true&fields=id,name,owners,permissions`, {
+            headers: {
+              'Authorization': `Bearer ${this.accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (response.ok) {
+            const folderInfo = await response.json()
+            report.push('   ✅ Can access fixed folder')
+            report.push(`   Folder: ${folderInfo.name}`)
+            report.push(`   Owner: ${folderInfo.owners ? folderInfo.owners.map((o: any) => o.emailAddress).join(', ') : 'Unknown'}`)
+          } else {
+            report.push('   ❌ Cannot access fixed folder')
+            report.push(`   Status: ${response.status}`)
+            if (response.status === 403) {
+              report.push('   → Permission denied. User needs to be added to folder/drive permissions')
+            } else if (response.status === 404) {
+              report.push('   → Folder not found. May be deleted or inaccessible')
+            }
+          }
+        } catch (error) {
+          report.push('   ❌ Error accessing fixed folder')
+          report.push(`   Error: ${error}`)
+        }
+      } else {
+        report.push('   ⚠️ No fixed folder ID configured')
+      }
+      report.push('')
+
+      // 3. ファイル一覧の確認
+      report.push('3. File Access Test:')
+      try {
+        const files = await this.listBackupFiles()
+        report.push(`   Found ${files.length} accessible files`)
+        if (files.length === 0) {
+          report.push('   → No files are accessible to this user')
+          report.push('   → User may need proper permissions or files may not exist')
+        }
+      } catch (error) {
+        report.push('   ❌ Error listing files')
+        report.push(`   Error: ${error}`)
+      }
+      report.push('')
+
+      // 4. 推奨アクション
+      report.push('4. Recommended Actions:')
+      if (!sharedDriveId) {
+        report.push('   → Add user to "みそらグループ 業務用 共有ドライブ" as Content Manager')
+        report.push('   → URL: https://drive.google.com/drive/folders/1p57H4bwTXgXi3z7so0YOkp53JXmnSz_P')
+      }
+      report.push('   → Verify OAuth consent screen includes this user as test user')
+      report.push('   → Contact admin to verify shared drive permissions')
+
+    } catch (error) {
+      report.push(`Error generating report: ${error}`)
+    }
+
+    const reportText = report.join('\n')
+    console.log(reportText)
+    return reportText
+  }
+
+  // 簡易アクセステスト
+  async quickAccessTest(): Promise<{canAccessDrive: boolean, canAccessFolder: boolean, canListFiles: boolean}> {
+    const result = {
+      canAccessDrive: false,
+      canAccessFolder: false,
+      canListFiles: false
+    }
+
+    if (!this.isSignedIn()) {
+      return result
+    }
+
+    try {
+      // 共有ドライブアクセステスト
+      const sharedDriveId = await this.findTargetSharedDrive()
+      result.canAccessDrive = !!sharedDriveId
+
+      // フォルダアクセステスト
+      if (GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID) {
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID}?supportsAllDrives=true&fields=id`, {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        result.canAccessFolder = response.ok
+      }
+
+      // ファイル一覧テスト
+      try {
+        const files = await this.listBackupFiles()
+        result.canListFiles = files.length > 0
+      } catch {
+        result.canListFiles = false
+      }
+
+    } catch (error) {
+      console.error('Quick access test failed:', error)
+    }
+
+    return result
+  }
 }
 
 // シングルトンインスタンス
