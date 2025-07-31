@@ -306,13 +306,27 @@ class GoogleDriveService {
     const allFolders = await this.findAllAppFolders()
     
     if (allFolders.length > 0) {
-      // 2. 共有ドライブ内のフォルダを最優先
+      // 複数のフォルダが見つかった場合の警告
+      if (allFolders.length > 1) {
+        console.warn(`⚠️ Multiple app folders found (${allFolders.length}). Using the most appropriate one.`)
+        allFolders.forEach((folder, index) => {
+          console.warn(`  ${index + 1}. ${folder.name} (ID: ${folder.id}, DriveId: ${folder.driveId || 'Personal'}, Modified: ${folder.modifiedTime})`)
+        })
+      }
+      
+      // 2. 共有ドライブ内のフォルダを最優先（最新のものを使用）
       const sharedDriveFolders = allFolders.filter(folder => folder.driveId)
       if (sharedDriveFolders.length > 0) {
         const latestSharedDrive = sharedDriveFolders.sort((a, b) => 
           new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
         )[0]
         console.log('✅ Using shared drive folder:', latestSharedDrive.id, latestSharedDrive.name, `(DriveId: ${latestSharedDrive.driveId})`)
+        
+        // 重複フォルダがある場合は統合を提案
+        if (sharedDriveFolders.length > 1) {
+          console.warn('⚠️ Multiple shared drive folders detected. Consider manually consolidating them.')
+        }
+        
         return latestSharedDrive.id
       }
 
@@ -347,24 +361,66 @@ class GoogleDriveService {
       return latestFolder.id
     }
 
-    // 4. フォルダが存在しない場合は共有ドライブ内に作成
-    console.log('🔍 Step 2: No folders found, creating new app folder in shared drive...')
+    // 5. フォルダが存在しない場合の作成（競合状態を考慮）
+    return await this.createAppFolderSafely()
+  }
+
+  // 競合状態を考慮した安全なフォルダ作成
+  private async createAppFolderSafely(): Promise<string> {
+    console.log('🔍 No folders found, creating new app folder safely...')
     
     // 「みそらグループ 業務用 共有ドライブ」共有ドライブを検索
     const sharedDriveId = await this.findTargetSharedDrive()
     
     if (sharedDriveId) {
       console.log('📁 Creating folder in shared drive:', sharedDriveId)
-      const createResult = await this.apiCall('files?supportsAllDrives=true', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME,
-          mimeType: 'application/vnd.google-apps.folder',
-          parents: [sharedDriveId]
+      
+      try {
+        const createResult = await this.apiCall('files?supportsAllDrives=true', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [sharedDriveId]
+          })
         })
-      })
-      console.log('✅ New app folder created in shared drive:', createResult.id)
-      return createResult.id
+        console.log('✅ New app folder created in shared drive:', createResult.id)
+        
+        // 作成後に少し待ってから再検索（他のユーザーが同時作成していないか確認）
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        const verifyFolders = await this.findAllAppFolders()
+        if (verifyFolders.length > 1) {
+          console.warn(`⚠️ Multiple folders detected after creation (${verifyFolders.length}). This might indicate concurrent creation.`)
+          // 最新のものを使用（通常は今作成したもの）
+          const latestFolder = verifyFolders
+            .filter(folder => folder.driveId === sharedDriveId)
+            .sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime())[0]
+          
+          if (latestFolder && latestFolder.id !== createResult.id) {
+            console.warn('⚠️ Using different folder than the one we just created (concurrent creation detected)')
+            return latestFolder.id
+          }
+        }
+        
+        return createResult.id
+      } catch (error) {
+        console.error('❌ Failed to create folder in shared drive:', error)
+        // 作成失敗の場合、もう一度検索してみる（他のユーザーが作成している可能性）
+        console.log('🔍 Retrying folder search after creation failure...')
+        const retryFolders = await this.findAllAppFolders()
+        if (retryFolders.length > 0) {
+          const sharedDriveFolders = retryFolders.filter(folder => folder.driveId === sharedDriveId)
+          if (sharedDriveFolders.length > 0) {
+            const latestSharedDrive = sharedDriveFolders.sort((a, b) => 
+              new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
+            )[0]
+            console.log('✅ Found folder created by another user:', latestSharedDrive.id)
+            return latestSharedDrive.id
+          }
+        }
+        throw error
+      }
     } else {
       // 共有ドライブが見つからない場合はマイドライブに作成
       console.log('⚠️ Shared drive not found, creating in personal drive')
