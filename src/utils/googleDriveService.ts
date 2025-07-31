@@ -298,7 +298,35 @@ class GoogleDriveService {
 
   // フォルダ名による確実な検索（同じフォルダを常に選択）
   async getOrCreateAppFolder(): Promise<string> {
-    console.log('📁 Getting or creating app folder by name search')
+    console.log('📁 Getting or creating app folder')
+    
+    // 0. 固定フォルダIDが設定されている場合はそれを使用
+    if (GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID) {
+      console.log('📌 Using fixed folder ID from config:', GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID)
+      
+      // フォルダの存在確認
+      try {
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID}?supportsAllDrives=true&fields=id,name,mimeType`, {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.ok) {
+          const folderInfo = await response.json()
+          console.log('✅ Fixed folder confirmed:', folderInfo.name, folderInfo.id)
+          return GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID
+        } else {
+          console.warn('⚠️ Fixed folder ID not accessible:', response.status)
+          console.warn('⚠️ Falling back to dynamic folder search...')
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to verify fixed folder:', error)
+        console.warn('⚠️ Falling back to dynamic folder search...')
+      }
+    }
+    
     console.log('🔍 Searching for folder name:', GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME)
     
     // 1. フォルダ名で全てのフォルダを検索（共有・個人問わず）
@@ -392,6 +420,9 @@ class GoogleDriveService {
         const verifyFolders = await this.findAllAppFolders()
         if (verifyFolders.length > 1) {
           console.warn(`⚠️ Multiple folders detected after creation (${verifyFolders.length}). This might indicate concurrent creation.`)
+          console.warn('📌 IMPORTANT: Please set VITE_SHARED_FOLDER_ID environment variable to prevent duplicate folders!')
+          console.warn(`📌 Add this to your .env file: VITE_SHARED_FOLDER_ID=${createResult.id}`)
+          
           // 最新のものを使用（通常は今作成したもの）
           const latestFolder = verifyFolders
             .filter(folder => folder.driveId === sharedDriveId)
@@ -399,8 +430,12 @@ class GoogleDriveService {
           
           if (latestFolder && latestFolder.id !== createResult.id) {
             console.warn('⚠️ Using different folder than the one we just created (concurrent creation detected)')
+            console.warn(`📌 Recommended VITE_SHARED_FOLDER_ID: ${latestFolder.id}`)
             return latestFolder.id
           }
+        } else {
+          // 単一フォルダの場合もIDを推奨
+          console.log(`📌 Recommendation: Set VITE_SHARED_FOLDER_ID=${createResult.id} in .env to prevent future duplicates`)
         }
         
         return createResult.id
@@ -566,6 +601,27 @@ class GoogleDriveService {
           console.log(`    - IsShared (calculated): ${isShared}`)
           console.log(`    - ModifiedTime: ${folder.modifiedTime}`)
         })
+        
+        // 重複フォルダの場合は環境変数設定を推奨
+        if (allFiles.length > 1) {
+          console.warn('📌 DUPLICATE FOLDERS DETECTED!')
+          console.warn('📌 To fix this permanently, add one of these IDs to your .env file:')
+          const sharedDriveFolders = allFiles.filter(folder => folder.driveId)
+          if (sharedDriveFolders.length > 0) {
+            const recommendedFolder = sharedDriveFolders.sort((a, b) => 
+              new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
+            )[0]
+            console.warn(`📌 RECOMMENDED: VITE_SHARED_FOLDER_ID=${recommendedFolder.id}`)
+            console.warn(`📌 (This is the latest shared drive folder created by: ${recommendedFolder.owners ? recommendedFolder.owners.map((o: any) => o.displayName || o.emailAddress).join(', ') : 'Unknown'})`)
+          } else {
+            const latestFolder = allFiles.sort((a, b) => 
+              new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
+            )[0]
+            console.warn(`📌 FALLBACK: VITE_SHARED_FOLDER_ID=${latestFolder.id}`)
+          }
+          console.warn('📌 After setting the environment variable, restart the application.')
+        }
+        
         return allFiles
       } else {
         console.log('📁 No folders found with name:', GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME)
