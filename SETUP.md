@@ -33,10 +33,25 @@ npm run build
 npm run preview
 ```
 
-## 💾 データについて
-- すべてのデータはブラウザのローカルストレージに保存されます
-- PC間でのデータ共有は現在サポートしていません
-- データのバックアップが必要な場合は、ブラウザの開発者ツールからエクスポートできます
+## 💾 Google Drive連携の設定
+
+### 環境変数ファイルの作成
+`.env`ファイルを作成し、以下の内容を設定してください：
+
+```
+VITE_GOOGLE_CLIENT_ID=639287110166-l6peiuisqpc3o5gibjjnmu7k3ui28ho2.apps.googleusercontent.com
+VITE_GOOGLE_API_KEY=AIzaSyBmdBloS0KSZLFeJXF0lXjy-v7BQ29GPyQ
+
+# 固定フォルダID（重複フォルダ防止のため必須）
+VITE_SHARED_FOLDER_ID=1p57H4bwTXgXi3z7so0YOkp53JXmnSz_P
+```
+
+**重要**: この設定により全ユーザーが同じ共有フォルダを使用し、重複フォルダの作成を防げます。
+
+### 共有フォルダについて
+- 指定フォルダ: https://drive.google.com/drive/folders/1p57H4bwTXgXi3z7so0YOkp53JXmnSz_P
+- このフォルダへのアクセス権限が必要です
+- アプリで「Google Driveにサインイン」後、共有データの保存・読み込みが可能です
 
 ## 🆘 トラブルシューティング
 - Node.jsがインストールされていない場合は、nodejs.orgからダウンロードしてください
