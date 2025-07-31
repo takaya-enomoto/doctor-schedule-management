@@ -475,13 +475,19 @@ class GoogleDriveService {
   private async findTargetSharedDrive(): Promise<string | null> {
     try {
       console.log('🔍 Searching for target shared drive: みそらグループ 業務用 共有ドライブ')
+      console.log(`👤 Current user: ${this.userInfo?.name} (${this.userInfo?.email})`)
       
-      const result = await this.apiCall('drives?fields=drives(id,name)')
+      const result = await this.apiCall('drives?fields=drives(id,name,capabilities)')
       
       if (result.drives && result.drives.length > 0) {
         console.log('📁 Available shared drives:')
         result.drives.forEach((drive: any, index: number) => {
           console.log(`  ${index + 1}. ${drive.name} (ID: ${drive.id})`)
+          if (drive.capabilities) {
+            console.log(`    - Can add children: ${drive.capabilities.canAddChildren}`)
+            console.log(`    - Can edit: ${drive.capabilities.canEdit}`)
+            console.log(`    - Can manage members: ${drive.capabilities.canManageMembers}`)
+          }
         })
         
         const targetDrive = result.drives.find((drive: any) => 
@@ -490,18 +496,56 @@ class GoogleDriveService {
         
         if (targetDrive) {
           console.log('✅ Found target shared drive:', targetDrive.id)
+          
+          // 共有ドライブのメンバーシップを確認
+          await this.checkSharedDriveMembership(targetDrive.id)
+          
           return targetDrive.id
         } else {
           console.log('❌ Target shared drive "みそらグループ 業務用 共有ドライブ" not found')
+          console.log('🔍 This user may not have access to the target shared drive')
           return null
         }
       } else {
         console.log('❌ No shared drives found')
+        console.log('🔍 This user may not be a member of any shared drives')
         return null
       }
     } catch (error) {
       console.warn('📁 Error searching for shared drives:', error)
+      if (error instanceof Error && error.message.includes('403')) {
+        console.warn('🔍 Diagnosis: User may not have permission to list shared drives')
+      }
       return null
+    }
+  }
+
+  // 共有ドライブのメンバーシップを確認
+  private async checkSharedDriveMembership(driveId: string): Promise<void> {
+    try {
+      console.log('🔍 Checking shared drive membership...')
+      
+      // 共有ドライブの権限を取得
+      const permissionsResult = await this.apiCall(`drives/${driveId}/permissions?supportsAllDrives=true&fields=permissions(id,type,role,emailAddress,displayName)`)
+      
+      if (permissionsResult.permissions && permissionsResult.permissions.length > 0) {
+        console.log('👥 Shared drive members:')
+        permissionsResult.permissions.forEach((perm: any, index: number) => {
+          console.log(`  ${index + 1}. ${perm.displayName || perm.emailAddress || 'Unknown'} - ${perm.role} (${perm.type})`)
+          
+          // 現在のユーザーかどうかチェック
+          if (perm.emailAddress === this.userInfo?.email) {
+            console.log(`    ✅ This is the current user - Role: ${perm.role}`)
+          }
+        })
+      } else {
+        console.log('⚠️ No permissions found or insufficient access to view members')
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not check shared drive membership:', error)
+      if (error instanceof Error && error.message.includes('403')) {
+        console.warn('🔍 User may not have permission to view shared drive members')
+      }
     }
   }
 
@@ -768,10 +812,13 @@ class GoogleDriveService {
   private async filterAccessibleFiles(files: Array<{ id: string, name: string, modifiedTime: string, size: string }>): Promise<Array<{ id: string, name: string, modifiedTime: string, size: string }>> {
     const accessibleFiles = []
     
+    console.log('🔍 Checking file accessibility for current user...')
+    console.log(`👤 Current user: ${this.userInfo?.name} (${this.userInfo?.email})`)
+    
     for (const file of files) {
       try {
-        // ファイルのメタデータ取得を試行してアクセス可能性をチェック
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?supportsAllDrives=true&fields=id,name`, {
+        // より詳細な情報でファイルアクセス可能性をチェック
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?supportsAllDrives=true&fields=id,name,owners,permissions,capabilities,shared,ownedByMe`, {
           headers: {
             'Authorization': `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json'
@@ -779,15 +826,49 @@ class GoogleDriveService {
         })
         
         if (response.ok) {
+          const fileDetails = await response.json()
           accessibleFiles.push(file)
+          
           console.log(`✅ File accessible: ${file.name} (${file.id})`)
+          console.log(`  - Owner: ${fileDetails.owners ? fileDetails.owners.map((o: any) => `${o.displayName} (${o.emailAddress})`).join(', ') : 'Unknown'}`)
+          console.log(`  - OwnedByMe: ${fileDetails.ownedByMe}`)
+          console.log(`  - Shared: ${fileDetails.shared}`)
+          console.log(`  - Permissions count: ${fileDetails.permissions ? fileDetails.permissions.length : 'N/A'}`)
+          
+          // 権限の詳細を表示
+          if (fileDetails.permissions && fileDetails.permissions.length > 0) {
+            console.log(`  - Permissions details:`)
+            fileDetails.permissions.forEach((perm: any, index: number) => {
+              console.log(`    ${index + 1}. ${perm.type}: ${perm.role} ${perm.emailAddress ? `(${perm.emailAddress})` : ''}`)
+            })
+          }
+          
+          // capabilities の詳細
+          if (fileDetails.capabilities) {
+            console.log(`  - Capabilities: canEdit=${fileDetails.capabilities.canEdit}, canDelete=${fileDetails.capabilities.canDelete}, canShare=${fileDetails.capabilities.canShare}`)
+          }
+          
         } else {
-          console.log(`❌ File not accessible: ${file.name} (${file.id}) - Status: ${response.status}`)
+          const errorText = await response.text()
+          console.log(`❌ File not accessible: ${file.name} (${file.id})`)
+          console.log(`  - Status: ${response.status}`)
+          console.log(`  - Error: ${errorText}`)
+          
+          // 具体的なエラー原因を分析
+          if (response.status === 403) {
+            console.log(`  - 🔍 Diagnosis: Permission denied. This file may have been created by another account with restricted sharing settings.`)
+          } else if (response.status === 404) {
+            console.log(`  - 🔍 Diagnosis: File not found. This file may have been deleted or is not accessible from this shared drive context.`)
+          }
         }
       } catch (error) {
-        console.log(`❌ File access error: ${file.name} (${file.id}) - Error:`, error)
+        console.log(`❌ File access error: ${file.name} (${file.id})`)
+        console.log(`  - Error:`, error)
+        console.log(`  - 🔍 Diagnosis: Network or authentication error.`)
       }
     }
+    
+    console.log(`📊 Accessibility Summary: ${accessibleFiles.length}/${files.length} files accessible to current user`)
     
     return accessibleFiles
   }
