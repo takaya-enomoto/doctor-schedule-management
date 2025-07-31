@@ -554,17 +554,52 @@ class GoogleDriveService {
       `files?q=${encodeURIComponent(backupFileQuery)}&fields=files(id,name,modifiedTime,size)${driveParams}`
     )
     
-    // 両方のファイルを結合し、更新日時でソート
+    // 両方のファイルを結合
     const allFiles = [
       ...(sharedResult.files || []),
       ...(backupResult.files || [])
-    ].sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime())
+    ]
 
     console.log('📋 Found backup files:', allFiles.length)
     console.log('  - Shared files:', sharedResult.files?.length || 0)
     console.log('  - Legacy backup files:', backupResult.files?.length || 0)
     
-    return allFiles
+    // 実際にアクセス可能なファイルのみをフィルタリング
+    const accessibleFiles = await this.filterAccessibleFiles(allFiles)
+    
+    // 更新日時でソート
+    accessibleFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime())
+    
+    console.log('📋 Accessible backup files:', accessibleFiles.length)
+    return accessibleFiles
+  }
+
+  // 実際にアクセス可能なファイルのみをフィルタリング
+  private async filterAccessibleFiles(files: Array<{ id: string, name: string, modifiedTime: string, size: string }>): Promise<Array<{ id: string, name: string, modifiedTime: string, size: string }>> {
+    const accessibleFiles = []
+    
+    for (const file of files) {
+      try {
+        // ファイルのメタデータ取得を試行してアクセス可能性をチェック
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?supportsAllDrives=true&fields=id,name`, {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.ok) {
+          accessibleFiles.push(file)
+          console.log(`✅ File accessible: ${file.name} (${file.id})`)
+        } else {
+          console.log(`❌ File not accessible: ${file.name} (${file.id}) - Status: ${response.status}`)
+        }
+      } catch (error) {
+        console.log(`❌ File access error: ${file.name} (${file.id}) - Error:`, error)
+      }
+    }
+    
+    return accessibleFiles
   }
 
   // バックアップファイルの読み込み
@@ -605,11 +640,24 @@ class GoogleDriveService {
   async deleteBackup(fileId: string): Promise<void> {
     console.log('🗑️ Deleting backup file:', fileId)
     
-    await this.apiCall(`files/${fileId}?supportsAllDrives=true`, {
-      method: 'DELETE'
-    })
-    
-    console.log('✅ Backup file deleted')
+    try {
+      await this.apiCall(`files/${fileId}?supportsAllDrives=true`, {
+        method: 'DELETE'
+      })
+      
+      console.log('✅ Backup file deleted')
+    } catch (error: any) {
+      console.error('❌ Delete backup error:', error)
+      
+      // 404エラーの場合は分かりやすいメッセージを表示
+      if (error.message && error.message.includes('404')) {
+        throw new Error('このファイルは削除できません。他のアカウントで作成されたファイルか、既に削除されている可能性があります。')
+      } else if (error.message && error.message.includes('403')) {
+        throw new Error('このファイルを削除する権限がありません。ファイルの所有者または共有ドライブの管理者に確認してください。')
+      } else {
+        throw new Error(`ファイルの削除に失敗しました: ${error.message || error}`)
+      }
+    }
   }
 
   // フォルダ検出状況の取得
