@@ -477,25 +477,78 @@ class GoogleDriveService {
       
       // 1. マイドライブ内での検索
       const personalSearchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+      console.log('🔍 Personal drive search query:', personalSearchQuery)
+      
       const personalResult = await this.apiCall(
         `files?q=${encodeURIComponent(personalSearchQuery)}&fields=files(id,name,shared,permissions(id,type,role,emailAddress),modifiedTime,ownedByMe,owners(displayName,emailAddress))`
       )
 
       // 2. 共有ドライブ内での検索
       const sharedDriveSearchQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+      console.log('🔍 Shared drive search query:', sharedDriveSearchQuery)
+      
       const sharedDriveResult = await this.apiCall(
         `files?q=${encodeURIComponent(sharedDriveSearchQuery)}&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name,shared,permissions(id,type,role,emailAddress),modifiedTime,ownedByMe,owners(displayName,emailAddress),driveId)`
       )
 
-      // 3. 結果を結合
-      const allFiles = [
-        ...(personalResult.files || []),
-        ...(sharedDriveResult.files || [])
-      ]
+      // 3. 特定の共有ドライブ内での直接検索も試行
+      const targetSharedDriveId = await this.findTargetSharedDrive()
+      let specificSharedDriveResult: any = { files: [] }
+      
+      if (targetSharedDriveId) {
+        console.log('🔍 Searching specifically in target shared drive:', targetSharedDriveId)
+        const specificQuery = `name='${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false and '${targetSharedDriveId}' in parents`
+        console.log('🔍 Specific shared drive search query:', specificQuery)
+        
+        try {
+          specificSharedDriveResult = await this.apiCall(
+            `files?q=${encodeURIComponent(specificQuery)}&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name,shared,permissions(id,type,role,emailAddress),modifiedTime,ownedByMe,owners(displayName,emailAddress),driveId)`
+          )
+          console.log('🔍 Specific shared drive search result:', specificSharedDriveResult.files?.length || 0, 'folders')
+        } catch (specificError) {
+          console.warn('⚠️ Specific shared drive search failed:', specificError)
+        }
+      }
+
+      // 4. 結果を結合（重複を除去）
+      const allFiles: any[] = []
+      const seenIds = new Set<string>()
+      
+      // Personal drive results
+      if (personalResult.files) {
+        personalResult.files.forEach((file: any) => {
+          if (!seenIds.has(file.id)) {
+            allFiles.push(file)
+            seenIds.add(file.id)
+          }
+        })
+      }
+      
+      // Shared drive results (general search)
+      if (sharedDriveResult.files) {
+        sharedDriveResult.files.forEach((file: any) => {
+          if (!seenIds.has(file.id)) {
+            allFiles.push(file)
+            seenIds.add(file.id)
+          }
+        })
+      }
+      
+      // Specific shared drive results
+      if (specificSharedDriveResult.files) {
+        specificSharedDriveResult.files.forEach((file: any) => {
+          if (!seenIds.has(file.id)) {
+            allFiles.push(file)
+            seenIds.add(file.id)
+          }
+        })
+      }
 
       console.log('📁 Search results:')
       console.log(`  - Personal drive: ${personalResult.files?.length || 0} folders`)
-      console.log(`  - Shared drives: ${sharedDriveResult.files?.length || 0} folders`)
+      console.log(`  - Shared drives (general): ${sharedDriveResult.files?.length || 0} folders`)
+      console.log(`  - Shared drives (specific): ${specificSharedDriveResult.files?.length || 0} folders`)
+      console.log(`  - Total unique folders: ${allFiles.length}`)
 
       if (allFiles.length > 0) {
         console.log(`📁 Found ${allFiles.length} folder(s) with name "${GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME}":`)
@@ -508,6 +561,7 @@ class GoogleDriveService {
           console.log(`    - DriveId: ${folder.driveId || 'N/A'}`)
           console.log(`    - Shared: ${folder.shared}`)
           console.log(`    - OwnedByMe: ${folder.ownedByMe}`)
+          console.log(`    - Owner: ${folder.owners ? folder.owners.map((o: any) => o.displayName || o.emailAddress).join(', ') : 'N/A'}`)
           console.log(`    - Permissions count: ${folder.permissions ? folder.permissions.length : 'undefined'}`)
           console.log(`    - IsShared (calculated): ${isShared}`)
           console.log(`    - ModifiedTime: ${folder.modifiedTime}`)
@@ -515,6 +569,30 @@ class GoogleDriveService {
         return allFiles
       } else {
         console.log('📁 No folders found with name:', GOOGLE_DRIVE_CONFIG.APP_FOLDER_NAME)
+        
+        // デバッグ用：共有ドライブの中身を一覧表示
+        if (targetSharedDriveId) {
+          console.log('🔍 Debug: Listing all folders in target shared drive for troubleshooting...')
+          try {
+            const debugQuery = `mimeType='application/vnd.google-apps.folder' and trashed=false and '${targetSharedDriveId}' in parents`
+            const debugResult = await this.apiCall(
+              `files?q=${encodeURIComponent(debugQuery)}&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name,modifiedTime,owners(displayName,emailAddress))`
+            )
+            console.log('🔍 All folders in shared drive:')
+            if (debugResult.files && debugResult.files.length > 0) {
+              debugResult.files.forEach((folder: any, index: number) => {
+                console.log(`  ${index + 1}. Name: "${folder.name}" (ID: ${folder.id})`)
+                console.log(`    - Owner: ${folder.owners ? folder.owners.map((o: any) => o.displayName || o.emailAddress).join(', ') : 'N/A'}`)
+                console.log(`    - Modified: ${folder.modifiedTime}`)
+              })
+            } else {
+              console.log('  No folders found in shared drive')
+            }
+          } catch (debugError) {
+            console.warn('⚠️ Debug listing failed:', debugError)
+          }
+        }
+        
         return []
       }
     } catch (error) {
