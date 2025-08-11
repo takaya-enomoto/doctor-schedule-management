@@ -17,7 +17,7 @@ const LAST_AUTO_BACKUP_KEY = 'doctor-schedule-last-auto-backup'
 
 // 自動バックアップ設定
 const AUTO_BACKUP_INTERVAL = 24 * 60 * 60 * 1000 // 24時間（ミリ秒）
-const MAX_AUTO_BACKUPS = 7 // 保持する自動バックアップの最大数
+const MAX_AUTO_BACKUPS = 10 // 保持する自動バックアップの最大数
 
 export const shouldCreateAutoBackup = (): boolean => {
   try {
