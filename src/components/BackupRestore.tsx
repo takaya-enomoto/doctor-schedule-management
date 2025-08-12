@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { createBackup, exportBackup, importBackup, validateBackupVersion, mergeBackupData } from '../utils/backup'
+import { getAutoBackups, getLastAutoBackupTime, clearAutoBackups } from '../utils/autoBackup'
 import type { BackupData } from '../utils/backup'
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall } from '../types'
 import GoogleDriveSync from './GoogleDriveSync'
@@ -115,8 +116,40 @@ const BackupRestore = ({
 
   const summary = getDataSummary()
 
+  // 自動バックアップの情報を取得
+  const autoBackups = getAutoBackups()
+  const lastAutoBackupTime = getLastAutoBackupTime()
+
+  const handleClearAutoBackups = () => {
+    if (confirm(`${autoBackups.length}件の自動バックアップを削除しますか？`)) {
+      clearAutoBackups()
+      setMessage({ type: 'success', text: '自動バックアップを削除しました' })
+    }
+  }
+
   return (
     <div className="backup-restore">
+      <div className="auto-backup-section">
+        <h3>自動バックアップ状況</h3>
+        <div className="auto-backup-info">
+          <p><strong>保存されている自動バックアップ数:</strong> {autoBackups.length}件 (最大10件)</p>
+          {lastAutoBackupTime && (
+            <p><strong>最後の自動バックアップ:</strong> {lastAutoBackupTime.toLocaleString('ja-JP')}</p>
+          )}
+          {autoBackups.length > 0 && (
+            <div className="auto-backup-actions">
+              <button 
+                onClick={handleClearAutoBackups}
+                className="clear-auto-backup-button"
+                style={{ backgroundColor: '#ff4757', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                🗑️ 自動バックアップをクリア
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      
       <div className="backup-section">
         <h3>データバックアップ</h3>
         <div className="data-summary">
