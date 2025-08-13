@@ -711,41 +711,20 @@ class GoogleDriveService {
   }
 
 
-  // バックアップファイルの保存（常に共同編集モード）
+  // バックアップファイルの保存（5世代管理）
   async saveBackup(backupData: BackupData): Promise<string> {
-    console.log('💾 Saving backup to Google Drive (collaborative mode)')
+    console.log('💾 Saving backup to Google Drive (5-generation management)')
     
     const folderId = await this.getOrCreateAppFolder()
     
-    // 常に共同編集用の固定ファイル名を使用
-    const fileName = 'shared_schedule_data.json'
-
-    // 既存の共有ファイルを検索（共有ドライブ対応）
-    const searchQuery = `name='${fileName}' and '${folderId}' in parents and trashed=false`
-    const existingFiles = await this.apiCall(`files?q=${encodeURIComponent(searchQuery)}&supportsAllDrives=true&includeItemsFromAllDrives=true`)
+    // タイムスタンプ付きのファイル名を生成
+    const now = new Date()
+    const timestamp = now.toISOString().slice(0, 19).replace(/[T:]/g, '-') // YYYY-MM-DD-HH-MM-SS
+    const fileName = `shared_schedule_data_${timestamp}.json`
     
-    if (existingFiles.files && existingFiles.files.length > 0) {
-      // 既存ファイルを更新
-      const fileId = existingFiles.files[0].id
-      console.log('📝 Updating existing shared file:', fileId)
-      
-      const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media&supportsAllDrives=true`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(backupData, null, 2)
-      })
+    console.log('📝 Creating new backup file:', fileName)
 
-      if (!response.ok) {
-        throw new Error('共有ファイルの更新に失敗しました')
-      }
-
-      const result = await response.json()
-      console.log('✅ Shared backup updated:', fileName)
-      return result.id
-    }
+    // 常に新しいファイルを作成（5世代管理のため）
 
     // 新規ファイル作成
     const metadata = {
@@ -771,7 +750,54 @@ class GoogleDriveService {
 
     const result = await response.json()
     console.log('✅ Backup saved:', fileName)
+    
+    // 古いファイルを削除（5個まで保持）
+    await this.cleanupOldBackups(folderId)
+    
     return result.id
+  }
+
+  // 古いバックアップファイルを削除（5個まで保持）
+  private async cleanupOldBackups(folderId: string): Promise<void> {
+    try {
+      console.log('🧹 Cleaning up old backup files (keeping latest 5)')
+      
+      // shared_schedule_data_で始まるファイルを全て取得
+      const searchQuery = `'${folderId}' in parents and name contains 'shared_schedule_data_' and trashed=false`
+      const existingFiles = await this.apiCall(
+        `files?q=${encodeURIComponent(searchQuery)}&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`
+      )
+      
+      if (existingFiles.files && existingFiles.files.length > 5) {
+        // 更新日時でソート（古いものから削除）
+        const sortedFiles = existingFiles.files.sort((a: any, b: any) => 
+          new Date(a.modifiedTime).getTime() - new Date(b.modifiedTime).getTime()
+        )
+        
+        // 古いファイルを削除（最新5個を残す）
+        const filesToDelete = sortedFiles.slice(0, sortedFiles.length - 5)
+        
+        console.log(`📝 Deleting ${filesToDelete.length} old backup files`)
+        
+        for (const file of filesToDelete) {
+          try {
+            await this.apiCall(`files/${file.id}?supportsAllDrives=true`, {
+              method: 'DELETE'
+            })
+            console.log(`🗑️ Deleted old backup: ${file.name}`)
+          } catch (deleteError) {
+            console.warn(`⚠️ Failed to delete file ${file.name}:`, deleteError)
+          }
+        }
+        
+        console.log('✅ Old backup cleanup completed')
+      } else {
+        console.log('📝 No cleanup needed (less than 5 files)')
+      }
+      
+    } catch (error) {
+      console.error('❌ Error during backup cleanup:', error)
+    }
   }
 
   // バックアップファイル一覧の取得
@@ -780,16 +806,16 @@ class GoogleDriveService {
     
     const folderId = await this.getOrCreateAppFolder()
     
-    // 共同編集ファイルと従来のバックアップファイルの両方を検索
-    const sharedFileQuery = `'${folderId}' in parents and name='shared_schedule_data.json' and trashed=false`
+    // 新形式（5世代管理）と従来のバックアップファイルの両方を検索
+    const newFormatQuery = `'${folderId}' in parents and name contains 'shared_schedule_data_' and trashed=false`
     const backupFileQuery = `'${folderId}' in parents and name contains '${GOOGLE_DRIVE_CONFIG.BACKUP_FILE_PREFIX}' and trashed=false`
     
     // 共有ドライブ対応のパラメータ
     const driveParams = `&supportsAllDrives=true&includeItemsFromAllDrives=true`
     
-    // 共同編集ファイルを取得
-    const sharedResult = await this.apiCall(
-      `files?q=${encodeURIComponent(sharedFileQuery)}&fields=files(id,name,modifiedTime,size)${driveParams}`
+    // 新形式ファイルを取得
+    const newFormatResult = await this.apiCall(
+      `files?q=${encodeURIComponent(newFormatQuery)}&fields=files(id,name,modifiedTime,size)&orderBy=modifiedTime desc${driveParams}`
     )
     
     // 従来のバックアップファイルを取得
@@ -799,12 +825,12 @@ class GoogleDriveService {
     
     // 両方のファイルを結合
     const allFiles = [
-      ...(sharedResult.files || []),
+      ...(newFormatResult.files || []),
       ...(backupResult.files || [])
     ]
 
     console.log('📋 Found backup files:', allFiles.length)
-    console.log('  - Shared files:', sharedResult.files?.length || 0)
+    console.log('  - New format files:', newFormatResult.files?.length || 0)
     console.log('  - Legacy backup files:', backupResult.files?.length || 0)
     
     // 実際にアクセス可能なファイルのみをフィルタリング
@@ -914,6 +940,25 @@ class GoogleDriveService {
 
     console.log('✅ Backup loaded successfully')
     return backupData
+  }
+
+  // 最新のバックアップファイルIDを取得（手動選択用）
+  async getLatestBackupId(): Promise<string | null> {
+    console.log('📂 Getting latest backup file ID')
+    
+    const backupFiles = await this.listBackupFiles()
+    
+    if (backupFiles.length === 0) {
+      return null
+    }
+    
+    // 最新のファイルを取得（modifiedTimeで降順ソート）
+    const latestFile = backupFiles.sort((a, b) => 
+      new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
+    )[0]
+    
+    console.log('📂 Latest backup file:', latestFile.name)
+    return latestFile.id
   }
 
   // バックアップファイルの削除
