@@ -423,13 +423,7 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
                 {backupFiles.length === 0 ? (
                   <p className="no-files">バックアップファイルがありません</p>
                 ) : (
-                  <>
-                    {backupFiles.length > 2 && (
-                      <p className="scroll-notice">
-                        💡 ファイルが多い場合はスクロールしてご確認ください ({backupFiles.length}個のファイル)
-                      </p>
-                    )}
-                    <div className="file-items">
+                  <div className="file-items">
                     {backupFiles.map(file => (
                       <div key={file.id} className="file-item">
                         <div className="file-info">
@@ -458,8 +452,7 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
                         </div>
                       </div>
                     ))}
-                    </div>
-                  </>
+                  </div>
                 )}
               </div>
             )}
