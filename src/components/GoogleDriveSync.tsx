@@ -424,9 +424,9 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
                   <p className="no-files">バックアップファイルがありません</p>
                 ) : (
                   <>
-                    {backupFiles.length > 5 && (
+                    {backupFiles.length > 2 && (
                       <p className="scroll-notice">
-                        💡 ファイルが多い場合はスクロールしてご確認ください
+                        💡 ファイルが多い場合はスクロールしてご確認ください ({backupFiles.length}個のファイル)
                       </p>
                     )}
                     <div className="file-items">

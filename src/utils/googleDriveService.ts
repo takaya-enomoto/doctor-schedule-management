@@ -881,12 +881,12 @@ class GoogleDriveService {
     // 更新日時でソート
     accessibleFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime())
     
-    // 最新5個のみを返す（表示制限）
-    const limitedFiles = accessibleFiles.slice(0, 5)
+    // 表示制限を一時的に解除してスクロールテスト
+    // const limitedFiles = accessibleFiles.slice(0, 5)
     
     console.log('📋 Accessible backup files:', accessibleFiles.length)
-    console.log('📋 Showing latest files:', limitedFiles.length)
-    return limitedFiles
+    console.log('📋 Showing all files for scroll test:', accessibleFiles.length)
+    return accessibleFiles // 全て表示してスクロールテスト
   }
 
   // 実際にアクセス可能なファイルのみをフィルタリング

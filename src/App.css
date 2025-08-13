@@ -2529,7 +2529,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 400px; /* 最大高さを制限 */
+  max-height: 200px; /* テスト用に小さく設定 */
   overflow-y: auto; /* 縦スクロールを有効化 */
   border: 1px solid #e0e0e0;
   border-radius: 4px;
