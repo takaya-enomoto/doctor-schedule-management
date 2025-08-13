@@ -21,6 +21,11 @@ export const GOOGLE_DRIVE_CONFIG = {
   // 固定フォルダID（設定されている場合は自動検出をスキップ）
   FIXED_FOLDER_ID: import.meta.env.VITE_SHARED_FOLDER_ID || '',
   
+  // 複数ファイル作成防止設定
+  DISABLE_AUTO_FOLDER_CREATION: true, // 自動フォルダ作成を無効化
+  SINGLE_FILE_MODE: true, // 単一ファイルモード強制
+  MAX_LOCAL_BACKUPS: 3, // ローカルバックアップ最大数
+  
   // バックアップファイル名のプレフィックス
   BACKUP_FILE_PREFIX: '医師出勤管理_バックアップ_'
 }

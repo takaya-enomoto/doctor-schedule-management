@@ -318,10 +318,16 @@ class GoogleDriveService {
           console.log('✅ Fixed folder confirmed:', folderInfo.name, folderInfo.id)
           return GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID
         } else {
+          if (GOOGLE_DRIVE_CONFIG.DISABLE_AUTO_FOLDER_CREATION) {
+            throw new Error(`固定フォルダID（${GOOGLE_DRIVE_CONFIG.FIXED_FOLDER_ID}）にアクセスできません。管理者にフォルダの共有設定を確認してもらってください。(ステータス: ${response.status})`)
+          }
           console.warn('⚠️ Fixed folder ID not accessible:', response.status)
           console.warn('⚠️ Falling back to dynamic folder search...')
         }
       } catch (error) {
+        if (GOOGLE_DRIVE_CONFIG.DISABLE_AUTO_FOLDER_CREATION) {
+          throw new Error(`固定フォルダIDの確認に失敗しました: ${error}`)
+        }
         console.warn('⚠️ Failed to verify fixed folder:', error)
         console.warn('⚠️ Falling back to dynamic folder search...')
       }
@@ -390,6 +396,9 @@ class GoogleDriveService {
     }
 
     // 5. フォルダが存在しない場合の作成（競合状態を考慮）
+    if (GOOGLE_DRIVE_CONFIG.DISABLE_AUTO_FOLDER_CREATION) {
+      throw new Error('自動フォルダ作成が無効化されています。管理者に VITE_SHARED_FOLDER_ID の設定を依頼してください。')
+    }
     return await this.createAppFolderSafely()
   }
 

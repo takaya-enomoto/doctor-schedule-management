@@ -1,4 +1,5 @@
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall } from '../types'
+import { GOOGLE_DRIVE_CONFIG } from './googleDriveConfig'
 
 export interface BackupData {
   version: string
@@ -35,7 +36,49 @@ export const createBackup = (
   }
 }
 
+// ローカルバックアップ数の制限機能
+const LOCAL_BACKUP_KEY = 'local-backup-count'
+
+const getLocalBackupCountInternal = (): number => {
+  try {
+    return parseInt(localStorage.getItem(LOCAL_BACKUP_KEY) || '0', 10)
+  } catch {
+    return 0
+  }
+}
+
+const incrementBackupCount = (): void => {
+  try {
+    const current = getLocalBackupCountInternal()
+    localStorage.setItem(LOCAL_BACKUP_KEY, (current + 1).toString())
+  } catch (error) {
+    console.warn('バックアップカウントの更新に失敗:', error)
+  }
+}
+
+const resetBackupCount = (): void => {
+  try {
+    localStorage.setItem(LOCAL_BACKUP_KEY, '0')
+  } catch (error) {
+    console.warn('バックアップカウントのリセットに失敗:', error)
+  }
+}
+
 export const exportBackup = (backupData: BackupData): void => {
+  // ローカルバックアップ数のチェック
+  const currentCount = getLocalBackupCountInternal()
+  if (currentCount >= GOOGLE_DRIVE_CONFIG.MAX_LOCAL_BACKUPS) {
+    const shouldContinue = confirm(
+      `ローカルバックアップが上限（${GOOGLE_DRIVE_CONFIG.MAX_LOCAL_BACKUPS}個）に達しています。\n` +
+      'これ以上のバックアップ作成は推奨されません。\n' +
+      'Google Driveでの共有を使用することを推奨します。\n\n' +
+      'それでもバックアップを作成しますか？'
+    )
+    if (!shouldContinue) {
+      return
+    }
+  }
+  
   const dataStr = JSON.stringify(backupData, null, 2)
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
   
@@ -69,6 +112,9 @@ const saveWithFilePicker = async (dataBlob: Blob, fileName: string): Promise<voi
     const writable = await fileHandle.createWritable()
     await writable.write(dataBlob)
     await writable.close()
+    
+    // バックアップ成功時にカウントを増やす
+    incrementBackupCount()
   } catch (error) {
     // ユーザーがキャンセルした場合は従来の方法にフォールバック
     if (error instanceof Error && error.name !== 'AbortError') {
@@ -88,6 +134,19 @@ const saveWithDownloadLink = (dataBlob: Blob, fileName: string): void => {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
+  
+  // バックアップ成功時にカウントを増やす
+  incrementBackupCount()
+}
+
+// バックアップカウントのリセット機能を公開
+export const resetLocalBackupCount = (): void => {
+  resetBackupCount()
+}
+
+// 現在のバックアップ数を取得する機能を公開
+export const getLocalBackupCount = (): number => {
+  return getLocalBackupCountInternal()
 }
 
 export const importBackup = (file: File): Promise<BackupData> => {

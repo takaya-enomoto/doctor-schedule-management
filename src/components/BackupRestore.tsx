@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
-import { createBackup, exportBackup, importBackup, validateBackupVersion, mergeBackupData } from '../utils/backup'
+import { createBackup, exportBackup, importBackup, validateBackupVersion, mergeBackupData, getLocalBackupCount, resetLocalBackupCount } from '../utils/backup'
 import { getAutoBackups, getLastAutoBackupTime, clearAutoBackups } from '../utils/autoBackup'
+import { GOOGLE_DRIVE_CONFIG } from '../utils/googleDriveConfig'
 import type { BackupData } from '../utils/backup'
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall } from '../types'
 import GoogleDriveSync from './GoogleDriveSync'
@@ -127,12 +128,20 @@ const BackupRestore = ({
     }
   }
 
+  const handleResetLocalBackupCount = () => {
+    if (confirm('ローカルバックアップのカウントをリセットしますか？')) {
+      resetLocalBackupCount()
+      setMessage({ type: 'success', text: 'ローカルバックアップカウントをリセットしました' })
+    }
+  }
+
   return (
     <div className="backup-restore">
       <div className="auto-backup-section">
         <h3>自動バックアップ状況</h3>
         <div className="auto-backup-info">
           <p><strong>保存されている自動バックアップ数:</strong> {autoBackups.length}件 (最大10件)</p>
+          <p><strong>ローカルバックアップ数:</strong> {getLocalBackupCount()}件 (最大{GOOGLE_DRIVE_CONFIG.MAX_LOCAL_BACKUPS}件)</p>
           {lastAutoBackupTime && (
             <p><strong>最後の自動バックアップ:</strong> {lastAutoBackupTime.toLocaleString('ja-JP')}</p>
           )}
@@ -141,10 +150,19 @@ const BackupRestore = ({
               <button 
                 onClick={handleClearAutoBackups}
                 className="clear-auto-backup-button"
-                style={{ backgroundColor: '#ff4757', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ backgroundColor: '#ff4757', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', marginRight: '8px' }}
               >
                 🗑️ 自動バックアップをクリア
               </button>
+              {getLocalBackupCount() > 0 && (
+                <button 
+                  onClick={handleResetLocalBackupCount}
+                  className="reset-local-backup-button"
+                  style={{ backgroundColor: '#ffa502', color: 'white', padding: '8px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  🔄 ローカルバックアップカウントリセット
+                </button>
+              )}
             </div>
           )}
         </div>
