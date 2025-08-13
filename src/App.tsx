@@ -15,6 +15,7 @@ import NurseOnCallForm from './components/NurseOnCallForm'
 import DataManagement from './components/DataManagement'
 import PrintDialog from './components/PrintDialog'
 import Modal from './components/Modal'
+import VersionDisplay from './components/VersionDisplay'
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall, Location } from './types'
 import { 
   saveSchedules, loadSchedules, savePersons, loadPersons,
@@ -687,6 +688,9 @@ function App() {
           />
         </Modal>
       </main>
+      
+      {/* バージョン表示 */}
+      <VersionDisplay />
     </div>
   )
 }
