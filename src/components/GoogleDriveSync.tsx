@@ -220,23 +220,13 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
     }
   }
 
-  // ファイル削除
-  const handleDeleteFile = async (fileId: string) => {
-    if (!confirm('このバックアップファイルを削除しますか？')) return
-
-    setIsLoading(true)
-    try {
-      await googleDriveService.deleteBackup(fileId)
-      setMessage({ type: 'success', text: 'バックアップファイルを削除しました' })
-      await loadFileList()
-    } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error instanceof Error ? error.message : 'ファイル削除に失敗しました' 
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  // ファイル削除（無効化）
+  const handleDeleteFile = async (_fileId: string) => {
+    // 削除機能は無効化されています
+    setMessage({ 
+      type: 'info', 
+      text: '削除機能は無効化されています。Google Driveで手動削除してください。' 
+    })
   }
 
   // ファイル一覧の表示切り替え
@@ -453,10 +443,11 @@ const GoogleDriveSync: React.FC<GoogleDriveSyncProps> = ({
                           </button>
                           <button 
                             onClick={() => handleDeleteFile(file.id)}
-                            disabled={isLoading}
-                            className="file-action-button delete-button"
+                            disabled={true}
+                            className="file-action-button delete-button disabled"
+                            title="削除機能は無効化されています"
                           >
-                            🗑️ 削除
+                            🗑️ 削除（無効）
                           </button>
                         </div>
                       </div>

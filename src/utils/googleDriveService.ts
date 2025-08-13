@@ -757,10 +757,10 @@ class GoogleDriveService {
     return result.id
   }
 
-  // 古いバックアップファイルを削除（5個まで保持）
+  // 古いバックアップファイルのクリーンアップ（削除機能無効化のため表示のみ）
   private async cleanupOldBackups(folderId: string): Promise<void> {
     try {
-      console.log('🧹 Cleaning up old backup files (keeping latest 5)')
+      console.log('📋 Checking backup files (automatic cleanup disabled)')
       
       // shared_schedule_data_で始まるファイルを全て取得（非表示ファイルは除外、キャッシュ回避）
       const searchQuery = `'${folderId}' in parents and name contains 'shared_schedule_data_' and not name contains '_HIDDEN_' and trashed=false`
@@ -776,94 +776,48 @@ class GoogleDriveService {
       )
       
       if (!response.ok) {
-        console.error('Failed to get file list for cleanup')
+        console.error('Failed to get file list for cleanup check')
         return
       }
       
       const existingFiles = await response.json()
       
       if (existingFiles.files && existingFiles.files.length > 5) {
-        // 更新日時でソート（古いものから削除）
+        // 更新日時でソート（古いものから削除対象をログ出力）
         const sortedFiles = existingFiles.files.sort((a: any, b: any) => 
           new Date(a.modifiedTime).getTime() - new Date(b.modifiedTime).getTime()
         )
         
-        // 古いファイルを削除（最新5個を残す）
+        // 古いファイル（5個を超えた分）をログ出力
         const filesToDelete = sortedFiles.slice(0, sortedFiles.length - 5)
         
-        console.log(`📝 Deleting ${filesToDelete.length} old backup files`)
+        console.log(`📝 Found ${existingFiles.files.length} backup files (${filesToDelete.length} older files)`)
+        console.log('🚫 Automatic deletion is disabled - manual cleanup required:')
         
-        for (const file of filesToDelete) {
-          try {
-            console.log(`🗑️ Attempting to delete: ${file.name} (ID: ${file.id})`)
-            
-            // 削除前にファイルの存在確認
-            const existsResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?fields=id,name&supportsAllDrives=true`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${this.accessToken}`
-              }
-            })
-            
-            if (!existsResponse.ok) {
-              if (existsResponse.status === 404) {
-                console.log(`ℹ️ File already deleted: ${file.name}`)
-                continue // 既に削除済みなのでスキップ
-              } else {
-                console.warn(`⚠️ Cannot verify file existence: ${file.name} (${existsResponse.status})`)
-              }
-            }
-            
-            // ファイルが存在する場合のみ削除実行
-            const deleteResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?supportsAllDrives=true`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${this.accessToken}`
-              }
-            })
-            
-            if (deleteResponse.ok) {
-              console.log(`✅ Successfully deleted: ${file.name}`)
-            } else {
-              if (deleteResponse.status === 404) {
-                console.log(`ℹ️ File was deleted by another process: ${file.name}`)
-              } else {
-                const errorText = await deleteResponse.text()
-                console.error(`❌ Failed to delete ${file.name}: ${deleteResponse.status} ${deleteResponse.statusText}`)
-                console.error(`❌ Error details:`, errorText)
-                
-                // 権限エラーの場合は代替手法（リネーム）を試行
-                if (deleteResponse.status === 403) {
-                  console.warn(`⚠️ Permission denied. Trying rename strategy instead.`)
-                  await this.hideOldBackupFile(file.id, file.name)
-                }
-              }
-            }
-            
-          } catch (deleteError) {
-            console.error(`❌ Exception while deleting ${file.name}:`, deleteError)
-          }
-        }
+        filesToDelete.forEach((file: any, index: number) => {
+          console.log(`  ${index + 1}. ${file.name} (ID: ${file.id}) - Created: ${file.modifiedTime}`)
+        })
         
-        console.log('✅ Old backup cleanup completed')
+        console.log('💡 Please manually delete old files in Google Drive if needed')
       } else {
-        console.log('📝 No cleanup needed (less than 5 files)')
+        console.log(`📝 Found ${existingFiles.files?.length || 0} backup files (no cleanup needed)`)
       }
       
     } catch (error) {
-      console.error('❌ Error during backup cleanup:', error)
+      console.error('❌ Error during backup file check:', error)
     }
   }
 
-  // 古いバックアップファイルを非表示化（削除できない場合の代替手法）
-  private async hideOldBackupFile(fileId: string, fileName: string): Promise<void> {
+  /*
+  // 古いバックアップファイルを非表示化（削除できない場合の代替手法）- 現在未使用
+  private async hideOldBackupFile(_fileId: string, _fileName: string): Promise<void> {
     try {
-      console.log(`🔄 Attempting to hide old backup file: ${fileName}`)
+      console.log(`🔄 Attempting to hide old backup file: ${_fileName}`)
       
       // ファイル名に _HIDDEN_ プレフィックスを追加
-      const hiddenFileName = `_HIDDEN_${fileName}`
+      const hiddenFileName = `_HIDDEN_${_fileName}`
       
-      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?supportsAllDrives=true`, {
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${_fileId}?supportsAllDrives=true`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${this.accessToken}`,
@@ -875,21 +829,22 @@ class GoogleDriveService {
       })
       
       if (response.ok) {
-        console.log(`✅ Successfully hid backup file: ${fileName} -> ${hiddenFileName}`)
+        console.log(`✅ Successfully hid backup file: ${_fileName} -> ${hiddenFileName}`)
       } else {
         const errorText = await response.text()
-        console.error(`❌ Failed to hide file ${fileName}: ${response.status} ${response.statusText}`)
+        console.error(`❌ Failed to hide file ${_fileName}: ${response.status} ${response.statusText}`)
         console.error(`❌ Error details:`, errorText)
       }
       
     } catch (error) {
-      console.error(`❌ Exception while hiding file ${fileName}:`, error)
+      console.error(`❌ Exception while hiding file ${_fileName}:`, error)
     }
   }
+  */
 
-  // バックアップファイル一覧の取得
+  // バックアップファイル一覧の取得（最大5個まで表示）
   async listBackupFiles(): Promise<Array<{ id: string, name: string, modifiedTime: string, size: string }>> {
-    console.log('📋 Listing backup files')
+    console.log('📋 Listing backup files (max 5 files)')
     
     const folderId = await this.getOrCreateAppFolder()
     
@@ -926,8 +881,12 @@ class GoogleDriveService {
     // 更新日時でソート
     accessibleFiles.sort((a, b) => new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime())
     
+    // 最新5個のみを返す（表示制限）
+    const limitedFiles = accessibleFiles.slice(0, 5)
+    
     console.log('📋 Accessible backup files:', accessibleFiles.length)
-    return accessibleFiles
+    console.log('📋 Showing latest files:', limitedFiles.length)
+    return limitedFiles
   }
 
   // 実際にアクセス可能なファイルのみをフィルタリング
@@ -1048,10 +1007,15 @@ class GoogleDriveService {
     return latestFile.id
   }
 
-  // バックアップファイルの削除
-  async deleteBackup(fileId: string): Promise<void> {
-    console.log('🗑️ Deleting backup file:', fileId)
+  // バックアップファイルの削除（無効化）
+  async deleteBackup(_fileId: string): Promise<void> {
+    console.log('🚫 Delete function disabled - manual deletion required')
     
+    // 削除機能を無効化
+    throw new Error('自動削除機能は無効化されています。Google Driveで手動削除してください。')
+    
+    // 以下のコードは無効化されています
+    /*
     try {
       await this.apiCall(`files/${fileId}?supportsAllDrives=true`, {
         method: 'DELETE'
@@ -1070,6 +1034,7 @@ class GoogleDriveService {
         throw new Error(`ファイルの削除に失敗しました: ${error.message || error}`)
       }
     }
+    */
   }
 
   // フォルダ検出状況の取得
