@@ -762,11 +762,25 @@ class GoogleDriveService {
     try {
       console.log('🧹 Cleaning up old backup files (keeping latest 5)')
       
-      // shared_schedule_data_で始まるファイルを全て取得
-      const searchQuery = `'${folderId}' in parents and name contains 'shared_schedule_data_' and trashed=false`
-      const existingFiles = await this.apiCall(
-        `files?q=${encodeURIComponent(searchQuery)}&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true`
+      // shared_schedule_data_で始まるファイルを全て取得（非表示ファイルは除外、キャッシュ回避）
+      const searchQuery = `'${folderId}' in parents and name contains 'shared_schedule_data_' and not name contains '_HIDDEN_' and trashed=false`
+      
+      // キャッシュを回避するため直接fetch APIを使用
+      const response = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(searchQuery)}&fields=files(id,name,modifiedTime)&supportsAllDrives=true&includeItemsFromAllDrives=true&_=${Date.now()}`, 
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`
+          }
+        }
       )
+      
+      if (!response.ok) {
+        console.error('Failed to get file list for cleanup')
+        return
+      }
+      
+      const existingFiles = await response.json()
       
       if (existingFiles.files && existingFiles.files.length > 5) {
         // 更新日時でソート（古いものから削除）
@@ -781,12 +795,53 @@ class GoogleDriveService {
         
         for (const file of filesToDelete) {
           try {
-            await this.apiCall(`files/${file.id}?supportsAllDrives=true`, {
-              method: 'DELETE'
+            console.log(`🗑️ Attempting to delete: ${file.name} (ID: ${file.id})`)
+            
+            // 削除前にファイルの存在確認
+            const existsResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?fields=id,name&supportsAllDrives=true`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${this.accessToken}`
+              }
             })
-            console.log(`🗑️ Deleted old backup: ${file.name}`)
+            
+            if (!existsResponse.ok) {
+              if (existsResponse.status === 404) {
+                console.log(`ℹ️ File already deleted: ${file.name}`)
+                continue // 既に削除済みなのでスキップ
+              } else {
+                console.warn(`⚠️ Cannot verify file existence: ${file.name} (${existsResponse.status})`)
+              }
+            }
+            
+            // ファイルが存在する場合のみ削除実行
+            const deleteResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?supportsAllDrives=true`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${this.accessToken}`
+              }
+            })
+            
+            if (deleteResponse.ok) {
+              console.log(`✅ Successfully deleted: ${file.name}`)
+            } else {
+              if (deleteResponse.status === 404) {
+                console.log(`ℹ️ File was deleted by another process: ${file.name}`)
+              } else {
+                const errorText = await deleteResponse.text()
+                console.error(`❌ Failed to delete ${file.name}: ${deleteResponse.status} ${deleteResponse.statusText}`)
+                console.error(`❌ Error details:`, errorText)
+                
+                // 権限エラーの場合は代替手法（リネーム）を試行
+                if (deleteResponse.status === 403) {
+                  console.warn(`⚠️ Permission denied. Trying rename strategy instead.`)
+                  await this.hideOldBackupFile(file.id, file.name)
+                }
+              }
+            }
+            
           } catch (deleteError) {
-            console.warn(`⚠️ Failed to delete file ${file.name}:`, deleteError)
+            console.error(`❌ Exception while deleting ${file.name}:`, deleteError)
           }
         }
         
@@ -800,15 +855,47 @@ class GoogleDriveService {
     }
   }
 
+  // 古いバックアップファイルを非表示化（削除できない場合の代替手法）
+  private async hideOldBackupFile(fileId: string, fileName: string): Promise<void> {
+    try {
+      console.log(`🔄 Attempting to hide old backup file: ${fileName}`)
+      
+      // ファイル名に _HIDDEN_ プレフィックスを追加
+      const hiddenFileName = `_HIDDEN_${fileName}`
+      
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?supportsAllDrives=true`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: hiddenFileName
+        })
+      })
+      
+      if (response.ok) {
+        console.log(`✅ Successfully hid backup file: ${fileName} -> ${hiddenFileName}`)
+      } else {
+        const errorText = await response.text()
+        console.error(`❌ Failed to hide file ${fileName}: ${response.status} ${response.statusText}`)
+        console.error(`❌ Error details:`, errorText)
+      }
+      
+    } catch (error) {
+      console.error(`❌ Exception while hiding file ${fileName}:`, error)
+    }
+  }
+
   // バックアップファイル一覧の取得
   async listBackupFiles(): Promise<Array<{ id: string, name: string, modifiedTime: string, size: string }>> {
     console.log('📋 Listing backup files')
     
     const folderId = await this.getOrCreateAppFolder()
     
-    // 新形式（5世代管理）と従来のバックアップファイルの両方を検索
-    const newFormatQuery = `'${folderId}' in parents and name contains 'shared_schedule_data_' and trashed=false`
-    const backupFileQuery = `'${folderId}' in parents and name contains '${GOOGLE_DRIVE_CONFIG.BACKUP_FILE_PREFIX}' and trashed=false`
+    // 新形式（5世代管理）と従来のバックアップファイルの両方を検索（非表示ファイルは除外）
+    const newFormatQuery = `'${folderId}' in parents and name contains 'shared_schedule_data_' and not name contains '_HIDDEN_' and trashed=false`
+    const backupFileQuery = `'${folderId}' in parents and name contains '${GOOGLE_DRIVE_CONFIG.BACKUP_FILE_PREFIX}' and not name contains '_HIDDEN_' and trashed=false`
     
     // 共有ドライブ対応のパラメータ
     const driveParams = `&supportsAllDrives=true&includeItemsFromAllDrives=true`
