@@ -17,11 +17,8 @@ import PrintDialog from './components/PrintDialog'
 import Modal from './components/Modal'
 import VersionDisplay from './components/VersionDisplay'
 import type { WorkSchedule, Person, LeaveRequest, OneTimeWork, OnCall, NurseOnCall, Location } from './types'
-import { 
-  saveSchedules, loadSchedules, savePersons, loadPersons,
-  saveLeaveRequests, loadLeaveRequests, saveOneTimeWork, loadOneTimeWork,
-  saveOnCalls, loadOnCalls, saveNurseOnCalls, loadNurseOnCalls
-} from './utils/storage'
+// ローカルストレージ機能は無効化
+// import { saveSchedules, loadSchedules, ... } from './utils/storage'
 import { checkAndCreateAutoBackup } from './utils/autoBackup'
 import { setupPrintColorSupport } from './utils/printHelpers'
 import { useAutoSaveToGoogleDrive } from './hooks/useAutoSaveToGoogleDrive'
@@ -117,58 +114,17 @@ function App() {
     }
   }, [isAuthenticated, isLoading, activeModal])
 
-  // 認証後にデータを読み込み
+  // ローカルストレージからの自動読み込みは無効化
+  // データはGoogle Driveからの手動復元のみ
+
+  // ローカルストレージへの保存機能は無効化
+  // データはGoogle Driveでのみ保存・復元
+
+  // 自動バックアップ実行（データ変更時のみ、ログイン直後は除外）
   useEffect(() => {
     if (!isAuthenticated) return
     
-    const savedSchedules = loadSchedules()
-    const savedPersons = loadPersons()
-    const savedLeaveRequests = loadLeaveRequests()
-    const savedOneTimeWork = loadOneTimeWork()
-    const savedOnCalls = loadOnCalls()
-    const savedNurseOnCalls = loadNurseOnCalls()
-    
-    // データをそのまま設定（カレンダー表示には全データを使用）
-    setSchedules(savedSchedules)
-    setPersons(savedPersons)
-    setLeaveRequests(savedLeaveRequests)
-    setOneTimeWork(savedOneTimeWork)
-    setOnCalls(savedOnCalls)
-    setNurseOnCalls(savedNurseOnCalls)
-    
-    console.log('認証後にデータを読み込みました（過去データもカレンダーには表示されます）')
-  }, [isAuthenticated])
-
-  // 認証後のみデータを保存
-  useEffect(() => {
-    if (isAuthenticated) saveSchedules(schedules)
-  }, [schedules, isAuthenticated])
-
-  useEffect(() => {
-    if (isAuthenticated) savePersons(persons)
-  }, [persons, isAuthenticated])
-
-  useEffect(() => {
-    if (isAuthenticated) saveLeaveRequests(leaveRequests)
-  }, [leaveRequests, isAuthenticated])
-
-  useEffect(() => {
-    if (isAuthenticated) saveOneTimeWork(oneTimeWork)
-  }, [oneTimeWork, isAuthenticated])
-
-  useEffect(() => {
-    if (isAuthenticated) saveOnCalls(onCalls)
-  }, [onCalls, isAuthenticated])
-
-  useEffect(() => {
-    if (isAuthenticated) saveNurseOnCalls(nurseOnCalls)
-  }, [nurseOnCalls, isAuthenticated])
-
-  // 自動バックアップ実行（認証後かつデータ変更時）
-  useEffect(() => {
-    if (!isAuthenticated) return
-    
-    // 初期ロード時は実行しない（データが空の場合は除外）
+    // データが存在し、かつログイン直後でない場合のみ自動バックアップ
     if (schedules.length > 0 || persons.length > 0 || leaveRequests.length > 0 || 
         oneTimeWork.length > 0 || onCalls.length > 0 || nurseOnCalls.length > 0) {
       const timer = setTimeout(performAutoBackup, 5000) // 5秒後に実行
