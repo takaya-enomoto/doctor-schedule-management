@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LocalStorage Cleaner</title>
+</head>
+<body>
+    <h1>LocalStorage データクリア</h1>
+    <button id="clearBtn">LocalStorage をクリア</button>
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('clearBtn').onclick = function() {
+            // LocalStorageの内容を表示
+            console.log('削除前のLocalStorage:', localStorage);
+            document.getElementById('result').innerHTML += '<h3>削除前のデータ:</h3>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                document.getElementById('result').innerHTML += `<p>${key}: ${localStorage.getItem(key).substring(0, 100)}...</p>`;
+            }
+            
+            // LocalStorageを完全クリア
+            localStorage.clear();
+            
+            // SessionStorageもクリア
+            sessionStorage.clear();
+            
+            document.getElementById('result').innerHTML += '<h3 style="color: red;">✅ LocalStorage と SessionStorage を完全削除しました</h3>';
+            console.log('削除後のLocalStorage:', localStorage);
+        }
+        
+        // ページ読み込み時に現在のデータを表示
+        window.onload = function() {
+            document.getElementById('result').innerHTML = '<h3>現在のLocalStorageデータ:</h3>';
+            if (localStorage.length === 0) {
+                document.getElementById('result').innerHTML += '<p>データはありません</p>';
+            } else {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    document.getElementById('result').innerHTML += `<p><strong>${key}:</strong> ${localStorage.getItem(key).substring(0, 100)}...</p>`;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

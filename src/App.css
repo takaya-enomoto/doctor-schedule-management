@@ -2514,20 +2514,60 @@ select:focus {
   padding: 1rem;
 }
 
+.scroll-notice {
+  color: #666;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background: #e3f2fd;
+  border-radius: 3px;
+  border-left: 3px solid #2196f3;
+}
+
 .file-items {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  max-height: 400px; /* 最大高さを制限 */
+  overflow-y: auto; /* 縦スクロールを有効化 */
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: #fafafa;
+  padding: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f0f0f0;
+}
+
+/* Webkit系ブラウザのスクロールバーカスタマイズ */
+.file-items::-webkit-scrollbar {
+  width: 8px;
+}
+
+.file-items::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.file-items::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.file-items::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 
 .file-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem;
+  padding: 0.6rem 0.75rem; /* 上下のパディングを少し減らす */
   background: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 4px;
+  min-height: 60px; /* 最小高さを設定して統一感を保つ */
 }
 
 .file-info {
